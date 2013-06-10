@@ -10,6 +10,7 @@ import Backend.MachineSpecifics
 import Backend.DummyMachine
 import Backend.Cmm
 import Control.Monad
+import Control.Monad.Identity
 import System.IO
 import System.Environment
 import System.Exit
@@ -25,10 +26,11 @@ main =	do
   let ast = parse . tokenize $ input
   let st  = symbolize ast
   let t   = typecheck' ast st
-  tr  <- translate' ast st
-  c <- cmmDoc tr
---  putStrLn (show ast)
---  putStrLn ('\n': (show st) ++ "\n") 
+  let c  = runIdentity . withDummyMachine $ do 
+  	tr <- translate (st, EmptyTree, EmptyTree) ast 
+  	cmmDoc tr
+
   putStrLn ( show c)
-  
+
+
   if t then exitSuccess else exitFailure

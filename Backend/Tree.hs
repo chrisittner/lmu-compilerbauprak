@@ -79,6 +79,9 @@ instance Monoid Stm where
 
 sseq :: [Stm] -> Stm
 sseq = mconcat
+unsseq :: Stm -> [Stm]
+unsseq (SEQ first second) = (unsseq first) ++ (unsseq second)
+unsseq x = [x]
 {-
 sseq [s] = s
 sseq (s:ss) = SEQ s (sseq ss)
