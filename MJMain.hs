@@ -9,6 +9,7 @@ import Backend.Tree
 import Backend.MachineSpecifics
 import Backend.DummyMachine
 import Backend.Cmm
+import Backend.Canonicalize
 import Control.Monad
 import Control.Monad.Identity
 import System.IO
@@ -26,12 +27,14 @@ main =	do
   let ast = parse . tokenize $ input
   let st  = symbolize ast
   let t   = typecheck' ast st
-  let c  = runIdentity . withDummyMachine $ translate ast st >>= (\ tr -> canonicalizeStm tr)
-  
---  do 
---  	tr <- translate ast st
---  	can <- runWriterT $ canonicalizeStm tr
---  	return can
+{-  let c  = runIdentity . withDummyMachine $ translate ast st >>= (\ tr -> canonicalizeStm tr) -}
+  let c = runIdentity . withDummyMachine $ do 
+  	tr <- translate' ast st
+  	can <- mapM canonicalize tr
+  	-- basisblöcke erstellen
+  	-- tracen
+  	
+  	return $ can
 
   putStrLn ( show c)
 
