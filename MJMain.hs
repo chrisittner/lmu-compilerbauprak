@@ -26,9 +26,12 @@ main =	do
   let ast = parse . tokenize $ input
   let st  = symbolize ast
   let t   = typecheck' ast st
-  let c  = runIdentity . withDummyMachine $ do 
-  	tr <- translate (st, EmptyTree, EmptyTree) ast 
-  	cmmDoc tr
+  let c  = runIdentity . withDummyMachine $ translate ast st >>= (\ tr -> canonicalizeStm tr)
+  
+--  do 
+--  	tr <- translate ast st
+--  	can <- runWriterT $ canonicalizeStm tr
+--  	return can
 
   putStrLn ( show c)
 

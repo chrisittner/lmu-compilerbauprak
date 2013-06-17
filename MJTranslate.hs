@@ -115,7 +115,7 @@ translateStm s addrlist (F.ArrayAssignStm arrayname indexexp exp) = do
 		MOVE {dest =dest', src=exp},
 		jump lexit,
 		LABEL lfalse,
-		EXP $ CALL {func=NAME "L_raise", args = [(CONST 42)] }, -- Fehlercode
+		EXP $ CALL {func=NAME "L_raise", args = [(CONST 42)] }, 
 		LABEL lexit ]
 
 
@@ -155,10 +155,9 @@ translateExp s addrlist (F.ArrayGetExp nameexp index) = do
 		NOP,
 		jump lexit,
 		LABEL lfalse,
-		EXP $ CALL {func=NAME "L_raise", args = [(CONST 42)] }, -- Fehlercode
+		EXP $ CALL {func=NAME "L_raise", args = [(CONST 42)] },
 		LABEL lexit ]) 
 		(MEM (BINOP PLUS (BINOP MUL (CONST wordsize) (BINOP PLUS (CONST 1) index)) name ))
-
 
 translateExp s addrlist (F.ArrayLengthExp nameexp) = do
 	name <- translateExp s addrlist nameexp
