@@ -1,0 +1,3 @@
+[(Exp/Stm, [Asm])]
+
+munch (BINOP Op (CONST _) y) =
