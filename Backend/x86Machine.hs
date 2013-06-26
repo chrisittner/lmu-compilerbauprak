@@ -17,7 +17,9 @@ data X86Assem =
 	| LABEL Label
 
 instance Assem X86Assem where
-  use (OPER2 _ _ src) = [src]
+  use (OPER2 MOV _ src) = [src]
+  use (OPER2 LEA _ src) = [src] -- test?
+  use (OPER2 _ dest src) = [dest, src]
   use (OPER1 _ src) = [src]
   use _ = []
   def (OPER2 _ dest _) = [dest]
@@ -40,4 +42,3 @@ instance Assem X86Assem where
   rename (OPER1 o (Reg t)) f = OPER1 o (Reg (f t))
   rename (CALL (Reg t)) f = CALL (Reg (f t))
   rename i = i
-
