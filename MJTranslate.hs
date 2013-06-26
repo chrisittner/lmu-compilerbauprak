@@ -9,7 +9,6 @@ import MJTypeChecker
 import Control.Monad
 -- Stm, Exp bezeichnen die Typen aus dem Backend!
 
--- arraybounds!
 
 getClassName :: F.Exp -> (SymbolTree, SymbolTree, SymbolTree) -> Label
 getClassName objname s = getclass (typeof objname s)
@@ -40,6 +39,9 @@ instance Translate F.MainClass where
 	
 instance Translate F.ClassDeclaration where
  translate (p, c,_) (F.ClassDeclaration classname _ varlist methodlist) = mapM (\ method -> (translateMethod (p, c, (getMethodSymbolTree method c)) method)) methodlist
+
+
+
 
 translateMethod :: (Frame f, MachineSpecifics m a f) => (SymbolTree, SymbolTree, SymbolTree) -> F.MethodDeclaration -> m (Fragment f Stm)
 translateMethod s@(_, (Class classname classvars _), (Method name _ pars vars)) (F.MethodDeclaration _ _ _ _ stm returnexp) = do

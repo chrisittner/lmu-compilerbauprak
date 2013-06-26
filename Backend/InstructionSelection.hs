@@ -1,6 +1,6 @@
 module Backend.InstructionSelection where
 
-import Backend.Tree
+import Backend.Tree as B
 import Backend.Names
 import Backend.MachineSpecifics
 import Backend.DummyMachine
@@ -8,93 +8,89 @@ import Backend.Cmm
 import Control.Monad.Trans.Writer.Strict
 
 
-munchExp :: (MachineSpecifics m a f)=> Exp -> WriterT [a] m Temp
+munchExp :: (MachineSpecifics m a f)=> B.Exp -> WriterT [a] m Operand
 
-munchExp (CONST a) = do -- überhaupt nötig?
-	temp <- nextTemp
-	tell [ENTER (Reg temp) (Imm a)]
-	return temp
+munchExp (B.CONST a) = return (Imm a)
 
-munchExp (BINOP (CONST a) b) = do 
-	temp <- nextTemp
-	b <- munchExp b
-	tell [MOV (Reg temp) (Imm a)]
-	tell [ADD (Reg temp) (Reg b)]
-	return temp
-
-munchExp (BINOP b (CONST a)) = do 
-	temp <- nextTemp
-	b <- munchExp b
-	tell [MOV (Reg temp) (Imm a)]
-	tell [ADD (Reg temp) (Reg b)]
-	return temp
-
-munchExp (BINOP a b) = do 
-	temp <- nextTemp
+munchExp (B.BINOP op a b) = do 
+	t <- nextTemp
+	eax <- mkNamedTemp "eax"
 	a <- munchExp a
 	b <- munchExp b
-	tell [MOV (Reg temp) (Reg a)]
-	tell [ADD (Reg temp) (Reg b)]
-	return temp
+	let instr = case op of PLUS -> [OPER2 MOV (Reg t) (Reg a), OPER2 ADD (Reg t) (Reg b)]
+											| MINUS -> [OPER2 MOV (Reg t) (Reg a), OPER2 SUB (Reg t) (Reg b)]
+											| MUL -> [OPER2 MOV (Reg eax) (Reg a), OPER2 IMUL (Reg b), OPER2 MOV (Reg t) (Reg eax)]
+											| DIV -> [OPER2 MOV (Reg eax) (Reg a), OPER2 IDIV (Reg b), OPER2 MOV (Reg t) (Reg eax)]
+											| AND -> [OPER2 MOV (Reg t) (Reg a), OPER2 AND (Reg t) (Reg b)]
+											| OR -> [OPER2 MOV (Reg t) (Reg a), OPER2 OR (Reg t) (Reg b)]
+											| LSHIFT -> [OPER2 MOV (Reg t) (Reg a), OPER2 SAL (Reg t) (Reg b)]
+											| RSHIFT -> [OPER2 MOV (Reg t) (Reg a), OPER2 SAR (Reg t) (Reg b)]
+{- 											| ARSHIFT -> [OPER2 SHR (Reg t) (Reg b)] -}
+											| XOR -> [OPER2 XOR (Reg t) (Reg b)]
+	tell instr
+	return $ Reg t
 
-munchExp (NAME a) = do
+munchExp (B.NAME a) = do ------#########
 	lab <- mkNamedLabel a
 	return lab
 
-munchExp (TEMP a) = do
-	temp <- mkNamedTemp a
-	return temp
+munchExp (B.TEMP a) = do
+	t <- mkNamedTemp a
+	return (Reg t)
 
-munchExp (MEM a) = do
-	temp <- nextTemp
-	tell [ MOV (Reg temp) (Mem (Just a) 0 Nothing) ]
-	return temp
+munchExp (B.MEM a) = do -- wirklich notwendig das in ein Register zu laden? können asmbefehle nicht auf beliebigen Operanden arbeiten?
+	t <- nextTemp
+	tell [OPER2  MOV (Reg t) (Mem (Just a) 0 Nothing)]
+	return (Reg t)
 
-munchExp (CAll f args) = do --?
-	temp <- nextTemp
+
+
+munchStm :: (MachineSpecifics m a f)=> B.Stm -> WriterT [a] m ()
+
+munchStm (B.SEQ stm1 stm2) = munchStm stm1 >> munchStm stm2
+
+munchStm (B.EXP (B.CALL f args)) = do -- ?
 	f <- munchExp f
 	args <- mapM munchExp args
-	tell [CALL (Reg f)]
-	return temp
+munchStm (B.MOVE (B.TEMP a) (B.CALL f args)) = do -- ?
+	f <- munchExp f
+	args <- mapM munchExp args
+	
 
+munchStm (B.EXP exp) = munchExp exp >>= (\ _ -> return ())
 
-
-
-munchStm :: (MachineSpecifics m a f)=> Stm -> WriterT [a] m ()
-
-munchStm (EXP (CALL f args)) =
-
-munchStm (EXP exp) = munchExp exp >>= (\ _ -> return ())
-
-munchStm (MOVE dest src) = do 
+munchStm (B.MOVE dest src) = do 
 	dest <- munchExp dest
 	src <- munchExp src
-	tell [MOV (Reg dest) (Reg src)]
+	tell [OPER2 MOV dest src]
 
-munchStm (JUMP dest poss) = tell [JMP dest] --?
+munchStm (B.JUMP dest poss) = do
+	dest <- mkNamedLabel dest ---
+	tell [JMP dest]
 
-munchStm (CJUMP rel e1 e2 trueLab falseLab) = do
+munchStm (B.CJUMP rel e1 e2 trueLab falseLab) = do
 	e1 <- munchExp e1
 	e2 <- munchExp e2
-	tell [CMP (Reg e1) (Reg e2)]
-	let rel' = case rel of EQ -> E 
-									| NE -> NE 
-									| LT -> L
-									| GT -> G
-									| LE -> LE
-									| GE -> GE
-									| ULT -> L
-									| ULE -> LE
-									| UGT -> G
-									| UGE -> GE
-	tell [J rel' trueLab]
+	tell [OPER2 CMP e1 e2]
+	let rel' = case rel of B.EQ -> E 
+									| B.NE -> NE 
+									| B.LT -> L
+									| B.GT -> G
+									| B.LE -> LE
+									| B.GE -> GE
+									| B.ULT -> L
+									| B.ULE -> LE
+									| B.UGT -> G
+									| B.UGE -> GE
+	lab <- mkNamedLabel trueLab ---
+	tell [J rel' lab]
 
-munchStm (LABEL lab) = do
-	lab <- mkNamedLabel lab
-	tell [LABEL Label]
+munchStm (B.LABEL lab) = do
+	lab <- mkNamedLabel lab ---
+	tell [LABEL lab]
 
-munchStm (NOP) = tell [NOP]
-	
+munchStm (B.NOP) = tell [NOP]
+
 
 
 {-
