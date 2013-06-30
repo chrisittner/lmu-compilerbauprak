@@ -10,6 +10,8 @@ import Backend.MachineSpecifics
 import Backend.DummyMachine
 import Backend.Cmm
 import Backend.Canonicalize
+import Backend.X86Machine
+import Backend.InstructionSelection
 import Control.Monad
 import Control.Monad.Identity
 import System.IO
@@ -23,6 +25,7 @@ main =	do
   -- um statt dem Dateiinhalt den Dateinamen (mit relativem Pfad) anzugeben: folgende Zeilen einkommentieren
   -- args <- getArgs
   -- input <- readFile (args !! 0)
+--  input <- readFile "../MiniJava-Beispiele/Small/TrivialClass.java"
 
   let ast = parse . tokenize $ input
   let st  = symbolize ast
@@ -31,12 +34,15 @@ main =	do
   let c = runIdentity . withDummyMachine $ do 
   	tr <- translate' ast st
   	can <- mapM canonicalize tr
-  	-- basisblöcke erstellen
-  	-- tracen
-  	
+  	can <- cmmDoc can
   	return $ can
 
+ -- let d = runIdentity . withX86Machine $ mapM codeGen c 
+
+
+
   putStrLn ( show c)
+--  putStrLn ( show d)
 
 
   if t then exitSuccess else exitFailure

@@ -4,7 +4,7 @@ TARGET = mjc
 .PRECIOUS : *.hs 
 
 $(TARGET): $(SRCS)
-	ghc --make -o $@ MJMain.hs
+	ghc --make -prof -auto-all -rtsopts -o $@ MJMain.hs
 #	rm *.o MJLex.hs MJParse.hs
 
 run-all:
