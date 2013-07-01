@@ -25,7 +25,7 @@ pred' (Graph v e) node = [ x | (x,y) <- e, y==node ]
 
 
 enumV :: [X86Assem] -> [(Int, X86Assem)]
-enumV instrs = [(n,instr) |n <- [1..], instr <- instrs]
+enumV instrs = zip instr [1..]
 
 makeCFG :: [(Int, X86Assem)] ->[(Int, X86Assem)] -> Graph X86Assem -- CFG = Control flow graph
 makeCFG [] _ = Graph [] []
