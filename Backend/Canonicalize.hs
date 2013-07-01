@@ -12,12 +12,12 @@ import Control.Monad.Identity
 import Control.Monad.Trans
 import Data.List
 
-canonicalize :: (MachineSpecifics m a f)=> Fragment f Stm -> m (Fragment f Stm)
+canonicalize :: (MachineSpecifics m a f)=> Fragment f Stm -> m (Fragment f [Stm])
 canonicalize (FragmentProc f stms) = do
 	stms <- canonicalizeStm stms
 	(blocks, label) <- blockalize stms
 	stms' <- trace (blocks, label)
-	return $ FragmentProc f (sseq $ stms')
+	return $ FragmentProc f (stms')
 
 bufferExp :: (MachineSpecifics m a f)=> Exp -> WriterT [Stm] m Exp
 bufferExp exp = case exp of 

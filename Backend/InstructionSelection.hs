@@ -49,6 +49,9 @@ munchExp (B.MEM a) = do -- wirklich notwendig das in ein Register zu laden? kön
 	return (Reg t) 
 {-munchExp (B.MEM a) = return $ Mem (Just a) 0 Nothing-}
 
+munchExp _ = do 
+	t<- nextTemp
+	return (Reg t)
 
 munchStm :: (MachineSpecifics m a f)=> B.Stm -> WriterT [X86Assem] m ()
 

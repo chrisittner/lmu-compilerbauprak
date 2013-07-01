@@ -12,6 +12,7 @@ import Backend.Cmm
 import Backend.Canonicalize
 import Backend.X86Machine
 import Backend.InstructionSelection
+import Backend.Liveness
 import Control.Monad
 import Control.Monad.Identity
 import System.IO
@@ -34,15 +35,15 @@ main =	do
   let c = runIdentity . withDummyMachine $ do 
   	tr <- translate' ast st
   	can <- mapM canonicalize tr
-  	can <- cmmDoc can
+--  	can <- cmmDoc can
   	return $ can
 
- -- let d = runIdentity . withX86Machine $ mapM codeGen c 
+  let d = runIdentity . withX86Machine $ mapM codeGen c 
+--  let e = map makeInterferenceGraph d
 
 
-
-  putStrLn ( show c)
---  putStrLn ( show d)
+--  putStrLn ( show c)
+  putStrLn ( show d)
 
 
   if t then exitSuccess else exitFailure
