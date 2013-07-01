@@ -6,7 +6,7 @@ import Backend.InstructionSelection
 import Data.List
 
 data Graph a = Graph [(Int,a)] [((Int,a), (Int,a))]
-
+{-
 addV :: (Eq a) => Graph a -> (Int,a) -> Graph a
 addV (Graph v e) node = Graph (node:v) e
 addE :: (Eq a) => Graph a -> ((Int,a), (Int,a)) -> Graph a
@@ -17,6 +17,7 @@ remE :: (Eq a) =>  Graph a -> ((Int,a), (Int,a)) -> Graph a
 remE (Graph v e) edge = Graph v (e\\[edge])
 succ' :: (Eq a) =>  Graph a ->  (Int,a) -> [(Int,a)]
 succ' (Graph v e) node = [ y | (x,y) <- e, x==node ]
+-}
 pred' :: (Eq a) =>  Graph a -> (Int,a) -> [(Int,a)]
 pred' (Graph v e) node = [ x | (x,y) <- e, y==node ]
 
@@ -35,8 +36,17 @@ makeCFG (instr:rest) l = (Graph [instr] (makeEdges instr l)) `joinG` (makeCFG re
 joinG ::(Eq a) => Graph a -> Graph a -> Graph a
 joinG (Graph v1 e1) (Graph v2 e2) = Graph (v1++v2) (e1++e2)
 
-interferG :: (Eq a) => Graph a -> Graph a
-interferG (Graph v e)  
+makeLG :: Graph Assem -> Graph (Assem, [Temp])
+makeLG cfg = makeLiveTemps endlabel
 
+makeLiveTemps :: Graph Assem -> (Int, (Assem, [Temp])) -> Graph (Assem, [Temp])
+makeLiveTemps cfg (n, (instr, lives)) = foldl joinG (Graph newnodes []) (map (makeLiveTemps cfg) newnodes)
+ where newnodes =  map (\ (m, i) -> (m, (i, (lives ++ (use i)) \\ (def i)))) (pred' cfg (n, instr))
+
+interferG :: (Eq a) => Graph (Assem, [Temp]) -> Graph (Assem, [Temp])
+interferG (Graph nodes _) = Graph nodes (foldl interf [] nodes)
+
+interf :: [((Int, (Assem, [Temp])),(Int, (Assem, [Temp])))] -> (Int, (Assem, [Temp])) -> [((Int, (Assem, [Temp])),(Int, (Assem, [Temp])))]
+interf acc node@(n, (instr, temps)) = acc ++ [(node, node2) | node2@(m,  <- ]
 
 
