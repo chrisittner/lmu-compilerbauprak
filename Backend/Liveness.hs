@@ -43,10 +43,11 @@ makeLiveTemps :: Graph Assem -> (Int, (Assem, [Temp])) -> Graph (Assem, [Temp])
 makeLiveTemps cfg (n, (instr, lives)) = foldl joinG (Graph newnodes []) (map (makeLiveTemps cfg) newnodes)
  where newnodes =  map (\ (m, i) -> (m, (i, (lives ++ (use i)) \\ (def i)))) (pred' cfg (n, instr))
 
-interferG :: (Eq a) => Graph (Assem, [Temp]) -> Graph (Assem, [Temp])
-interferG (Graph nodes _) = Graph nodes (foldl interf [] nodes)
+interferG :: Graph (Assem, [Temp]) -> Graph (Temp)
+interferG (Graph nodes _) = Graph (nub.foldl ++ [] (map snd nodes)) (foldl interf [] nodes)
 
-interf :: [((Int, (Assem, [Temp])),(Int, (Assem, [Temp])))] -> (Int, (Assem, [Temp])) -> [((Int, (Assem, [Temp])),(Int, (Assem, [Temp])))]
-interf acc node@(n, (instr, temps)) = acc ++ [(node, node2) | node2@(m,  <- ]
+interf :: [(Temp, Temp)] -> (Int, (Assem, [Temp]) -> [(Temp, Temp)]
+interf edges (n, (instr, temps)) = nub ([(x,y)| x <- temps, y <- temps, x/=y] ++ edges)
+
 
 
