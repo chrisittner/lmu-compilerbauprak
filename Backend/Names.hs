@@ -4,7 +4,7 @@ module Backend.Names(
   Temp, Label, mkLabel, mkNamedTemp,
   MonadNameGen, nextTemp, nextLabel, 
   NameGen, runNameGen,
-  NameGenT, runNameGenT, labelName
+  NameGenT, runNameGenT
   ) where
 
 import Data.Monoid
@@ -36,7 +36,6 @@ type Label = String
 
 --instance Pretty Label where
 --   ppr l = text l
-labelName = drop 2 
 
 mkLabel :: String -> Label
 mkLabel l | ('$' `elem` l) = 

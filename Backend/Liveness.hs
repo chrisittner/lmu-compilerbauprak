@@ -25,7 +25,7 @@ pred' (Graph v e) node = [ x | (x,y) <- e, y==node ]
 
 
 enumV :: [X86Assem] -> [(Int, X86Assem)]
-enumV instrs = zip instr [1..]
+enumV instrs = zip [1..] instrs
 
 makeCFG :: [(Int, X86Assem)] ->[(Int, X86Assem)] -> Graph X86Assem -- CFG = Control flow graph
 makeCFG [] _ = Graph [] []
@@ -50,7 +50,7 @@ interferG :: Graph (X86Assem, [Temp]) -> Graph Temp
 interferG (Graph nodes _) = UGraph (nub (concat (map snd (map snd nodes)))) (foldl interf [] nodes)
 
 interf :: [(Temp, Temp)] -> (Int, (X86Assem, [Temp])) -> [(Temp, Temp)]
-interf edges (n, (instr, temps)) = nub ([(x,y)| x <- temps, y <- temps, x/=y] ++ edges)
+interf edges (n, (instr, temps)) = nub ([(x,y)| x <- temps, y <- temps, x<y] ++ edges)
 
 makeInterferenceGraph :: Fragment f [X86Assem] -> Graph (Temp)
 makeInterferenceGraph (FragmentProc _ assems) = interferG $ makeLG (makeCFG (enumV assems) (enumV assems))

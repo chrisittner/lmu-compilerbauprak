@@ -1,0 +1,30 @@
+.intel_syntax
+.globl LMain
+
+LMain:
+L$0:
+PUSH 4
+CALL L_halloc
+ADD %esp, 4
+MOV t5, %eax
+PUSH t5
+CALL C$value
+ADD %esp, 4
+MOV t6, %eax
+PUSH t6
+CALL L_println_int
+ADD %esp, 4
+MOV t7, %eax
+MOV t1, 0
+JMP L$1
+L$1:
+L$2:
+MOV t0, t3
+ADD t0, 0
+MOV DWORD PTR [t0], 555
+MOV t1, t3
+ADD t1, 0
+MOV t4, DWORD PTR [t1]
+JMP L$3
+L$3:
+

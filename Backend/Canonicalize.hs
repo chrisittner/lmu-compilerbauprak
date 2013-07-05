@@ -150,7 +150,7 @@ trace' tracedstms@((CJUMP cmp e1 e2 trueLabel falseLabel):_) blocks = do
 	else if length suitableBlock == 1
 			then trace' ((reverse (head suitableBlock)) ++ tracedstms) (blocks \\ suitableBlock)
 			else if length suitableBlock2 == 1
-					then trace' (reverse (head suitableBlock2) ++ ((CJUMP cmp e2 e1 falseLabel trueLabel):(tail tracedstms))) (blocks \\ suitableBlock2)
+					then trace' (reverse (head suitableBlock2) ++ ((CJUMP (neg cmp) e1 e2 falseLabel trueLabel):(tail tracedstms))) (blocks \\ suitableBlock2)
 					else do 
 						dummyLabel <- nextLabel
 						let dummyBlock = [jump falseLabel, LABEL dummyLabel] -- Dummy Block (in reverse)
