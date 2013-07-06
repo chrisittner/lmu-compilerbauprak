@@ -47,7 +47,7 @@ main =	do
 
 
 --  putStrLn ( show c)
-  putStrLn ".intel_syntax\n.globl LMain\n\nLMain:"
+  putStrLn ".intel_syntax\n.global LMain\n\nLMain:\n"
   putStrLn (concat $ map shw d)
 
 

@@ -7,7 +7,7 @@ import Backend.InstructionSelection
 import Backend.Names
 import Data.List
 
-data Graph a = Graph [(Int,a)] [((Int,a), (Int,a))] | UGraph [a] [(a, a)] deriving (Show)
+data Graph a = Graph [(Int,a)] [((Int,a), (Int,a))] | UGraph [a] [(a, a)] deriving (Show) -- (the Ints guarantee uniqueness, UGraph = graph with unique nodes)
 {-
 addV :: (Eq a) => Graph a -> (Int,a) -> Graph a
 addV (Graph v e) node = Graph (node:v) e
@@ -22,7 +22,6 @@ succ' :: (Eq a) =>  Graph a ->  (Int,a) -> [(Int,a)]
 succ' (Graph v e) node = [ y | (x,y) <- e, x==node ]
 pred' :: (Eq a) =>  Graph a -> (Int,a) -> [(Int,a)]
 pred' (Graph v e) node = [ x | (x,y) <- e, y==node ]
-
 
 enumV :: [X86Assem] -> [(Int, X86Assem)]
 enumV instrs = zip [1..] instrs
@@ -52,6 +51,24 @@ interferG (Graph nodes _) = UGraph (nub (concat (map snd (map snd nodes)))) (fol
 interf :: [(Temp, Temp)] -> (Int, (X86Assem, [Temp])) -> [(Temp, Temp)]
 interf edges (n, (instr, temps)) = nub ([(x,y)| x <- temps, y <- temps, x<y] ++ edges)
 
-makeInterferenceGraph :: Fragment f [X86Assem] -> Graph (Temp)
+makeInterferenceGraph :: Fragment f [X86Assem] -> Graph Temp
 makeInterferenceGraph (FragmentProc _ assems) = interferG $ makeLG (makeCFG (enumV assems) (enumV assems))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 

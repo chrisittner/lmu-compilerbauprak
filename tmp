@@ -1,7 +1,8 @@
 .intel_syntax
-.globl LMain
+.global LMain
 
 LMain:
+
 L$0:
 PUSH 4
 CALL L_halloc
