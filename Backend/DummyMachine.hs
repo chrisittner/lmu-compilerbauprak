@@ -49,8 +49,8 @@ instance (Monad m) => MachineSpecifics (DummyMachineT m) DummyAssem DummyFrame w
        returnTemp <- nextTemp
        return $ DummyFrame name paramTemps [] returnTemp
   codeGen (FragmentProc f b) = return (FragmentProc f []) 
-  allRegisters = return Nothing
-  generalPurposeRegisters = return Nothing
+  allRegisters = return [] -- return Nothing
+  generalPurposeRegisters = return [] -- return Nothing
   -- Der Typ Assem is leer, also sind folgende Definitionen sinnvoll:
   spill frame body temps = return (frame, [])
   printAssembly frags = return ""

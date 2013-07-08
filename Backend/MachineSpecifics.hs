@@ -30,7 +30,7 @@ data Location = Anywhere | InMemory
 
 class (Show f) => Frame f where
   name :: f -> String
-  params :: f -> [Exp] --
+  params :: f -> [Exp]
   size :: f -> Int
   allocLocal :: MonadNameGen m => f -> Location -> m (f, Exp) --
   makeProc :: MonadNameGen m => f -> Stm -> Exp -> m Stm --
@@ -39,12 +39,12 @@ class (Assem a, Frame f, MonadNameGen m) => MachineSpecifics m a f | m -> a f wh
   -- Interface zum Frontend
   wordSize :: m Int
   mkFrame :: String -> Int -> m f --
-  -- Codeerzeugung 
+  -- Codeerzeugung
   codeGen :: Fragment f [Stm] -> m (Fragment f [a])
   -- Interface zum Registerallokator
-  allRegisters :: m (Maybe [Temp])
-  generalPurposeRegisters :: m (Maybe [Temp])
-  spill :: f -> [a] -> [Temp] -> m (f, [a])  
+  allRegisters :: m [Temp] -- m (Maybe [Temp])
+  generalPurposeRegisters :: m [Temp] -- m (Maybe [Temp])
+  spill :: f -> [a] -> [Temp] -> m (f, [a])
   -- Interface zum Assembler
   printAssembly :: [Fragment f [a]] -> m String
 

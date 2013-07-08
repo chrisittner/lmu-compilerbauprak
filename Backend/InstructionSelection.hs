@@ -29,7 +29,7 @@ munchExp (B.BINOP op a b) = do
 		B.OR -> [OPER2 MOV (Reg t) a, OPER2 OR (Reg t) b]
 		B.LSHIFT -> [OPER2 MOV (Reg t) a, OPER2 SAL (Reg t) b]
 		B.RSHIFT -> [OPER2 MOV (Reg t) a, OPER2 SAR (Reg t) b]
-{-		B.ARSHIFT -> [OPER2 SHR (Reg t) b] -}
+{-		B.ARSHIFT -> [OPER2 SHR (Reg t) b] -- not implemented -}
 		B.XOR -> [OPER2 XOR (Reg t) b]
 	tell instr
 	return $ Reg t
@@ -103,21 +103,16 @@ munchStm (B.CJUMP rel e1 e2 trueLab falseLab) = do
 		B.GT -> G
 		B.LE -> LE
 		B.GE -> GE
-		B.ULT -> L
+{-		B.ULT -> L
 		B.ULE -> LE
 		B.UGT -> G
-		B.UGE -> GE
+		B.UGE -> GE -- not implemented -}
 	tell [J rel' trueLab]
 
 munchStm (B.LABEL lab) = do
 	tell [LABEL lab]
 
 munchStm (B.NOP) = tell [OPER0 NOP]
-
-
-
-
-
 
 
 

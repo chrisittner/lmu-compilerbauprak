@@ -20,36 +20,40 @@ import System.IO
 import System.Environment
 import System.Exit
 
-tokenize = alexScanTokens
-
-shw :: Fragment DummyFrame [X86Assem] -> String
-shw (FragmentProc _ a) = concat (map (++"\n") (map show a))
-
-
 main =	do
   input <- getContents
-  -- um statt dem Dateiinhalt den Dateinamen (mit relativem Pfad) anzugeben: folgende Zeilen einkommentieren
+
+-- um statt dem Dateiinhalt den Dateinamen (mit relativem Pfad) anzugeben: folgende Zeilen einkommentieren:
 --   args <- getArgs
 --   input <- readFile (args !! 0)
---  input <- readFile "../MiniJava-Beispiele/Small/TrivialClass.java"
 
-  let ast = parse . tokenize $ input
-  let st  = symbolize ast
-  let t   = typecheck' ast st
-{-  let c  = runIdentity . withDummyMachine $ translate ast st >>= (\ tr -> canonicalizeStm tr) -}
-  let c = runIdentity . withDummyMachine $ do 
-  	tr <- translate' ast st
-  	can <- mapM canonicalize tr
---  	can <- cmmDoc can
-  	return $ can
+  -- 1. Lex:
+  let tokens = alexScanTokens input
+  -- 2. Parse:
+  let abstractSyntaxTree = parse tokens
+  -- 3. Create symbol tree:
+  let symbolTable  = symbolize abstractSyntaxTree
+  -- 4. Run type checker:
+  let t = typecheck' abstractSyntaxTree symbolTable
 
-  let d = runIdentity . withX86Machine $ mapM codeGen c 
---  let e = map makeInterferenceGraph d
+  let canFragments = runIdentity . withX86Machine $ do
+  -- 5. Translate program to intermediate language fragments:
+  	ilFragments <- translate' abstractSyntaxTree symbolTable
+  -- 6. Canonicalize all fragments (includes blocking and tracing)
+  	mapM canonicalize ilFragments
+
+  let assemString = runIdentity . withX86Machine $ do
+  -- 7. Translate to x86 assembly
+  	x86Fragments <- mapM codeGen canFragments
+  -- 8. Register Allocation
+  	finalFragments <- regAlloc x86Fragments
+  -- 9. Code emission
+  	printAssembly finalFragments
 
 
---  putStrLn ( show c)
-  putStrLn ".intel_syntax\n.global LMain\n\nLMain:\n"
-  putStrLn (concat $ map shw d)
+-- Todo :
+--- IMMER X86Frame statt DummyFram verwenden, sonst muss man irgendwann die params verschieben?
 
 
-  if t then exitSuccess else exitFailure
+
+  putStrLn (assemString)

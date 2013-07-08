@@ -1,37 +1,38 @@
-{-# LANGUAGE EmptyDataDecls,MultiParamTypeClasses, GeneralizedNewtypeDeriving, ScopedTypeVariables #-}
+{-# LANGUAGE EmptyDataDecls,MultiParamTypeClasses, GeneralizedNewtypeDeriving, ScopedTypeVariables, FlexibleContexts #-}
 module Backend.X86Machine where
 import Backend.Names
 import Backend.X86Assem
-import qualified Backend.Tree as B
+import Backend.Tree
 import Backend.InstructionSelection
 import Backend.MachineSpecifics
-import Control.Monad.Trans.Writer.Strict
 import Control.Monad
-import Control.Monad.Trans.Identity
 import Control.Monad.Trans
-import Backend.DummyMachine
-import Backend.Names
+import Control.Monad.Trans.Identity
+import Control.Monad.Trans.Writer.Strict
+import Data.List
 
-data X86Frame = X86Frame {fname :: String, fparams :: [Temp], locals :: [Temp], returnTemp :: Temp} deriving Show
+eax = mkNamedTemp "%eax"
+ebx = mkNamedTemp "%ebx"
+ecx = mkNamedTemp "%ecx"
+edx = mkNamedTemp "%edx"
+ebp = mkNamedTemp "%ebp"
+esp = mkNamedTemp "%esp"
+esi = mkNamedTemp "%esi"
+edi = mkNamedTemp "%edi"
+
+data X86Frame = X86Frame { fname :: String, numParams :: Int, temps :: [Temp], returnTemp :: Temp, numMemoryLocals :: Int } deriving Show
 
 instance Frame X86Frame where
   name f = fname f
-  params f = [ TEMP t | t <- fparams f ]
-  size f = (length (params f)) + (length (locals f))
+  params f = [ MEM (BINOP PLUS (TEMP ebp) (CONST (8 + 4*n))) | n <- [0..((numParams f)-1)] ] -- Params liegen bei x86 an (%ebp+8)+n*4
+  size f = numMemoryLocals f
   allocLocal f Anywhere = do 
         t <- nextTemp 
-        return (X86Frame (fname f) (fparams f) (t:(locals f)) (returnTemp f),
+        return (X86Frame (fname f) (numParams f) (t:(temps f)) (returnTemp f) (numMemoryLocals f),
                 TEMP t)
-  allocLocal f InMemory = error "dummy machine has no memory model"
+  allocLocal f InMemory = return (X86Frame (fname f) (numParams f) (temps f) (returnTemp f) ((numMemoryLocals f)+1),
+                MEM (BINOP MINUS (TEMP ebp) (CONST $ 4 * numMemoryLocals f)) )
   makeProc f body returnExp = return $ SEQ body $ MOVE (TEMP (returnTemp f)) returnExp
-
-class (Show f) => Frame f where
-  name :: f -> String
-  params :: f -> [Exp] --
-  size :: f -> Int
-  allocLocal :: MonadNameGen m => f -> Location -> m (f, Exp) --
-  makeProc :: MonadNameGen m => f -> Stm -> Exp -> m Stm --
-
 
 
 
@@ -43,16 +44,53 @@ withX86Machine = runNameGenT . runX86MachineT
 
 instance (Monad m) => MachineSpecifics (X86MachineT m) X86Assem X86Frame where
   wordSize = return 4
-  mkFrame name nparams =
-    do paramTemps <- replicateM nparams nextTemp 
-       returnTemp <- nextTemp
-       return $ DummyFrame name paramTemps [] returnTemp
-  codeGen (FragmentProc f b) = do 
-  	assemlist <- execWriterT $ munchStm (B.sseq b)
-  	return $ FragmentProc f assemlist
-  allRegisters = return Nothing
-  generalPurposeRegisters = return Nothing
+  mkFrame name nparams = do
+  	returnTemp <- nextTemp
+  	return $ X86Frame name nparams [] returnTemp 0
+  allRegisters = return [eax, ebx, ecx, edx, esi, edi, esp, ebp]
+  generalPurposeRegisters = return [eax, ebx, ecx, edx, esi, edi]
 
-  spill frame body temps = return (frame, []) -- todo
-  printAssembly frags = return "" -- todo
+  codeGen (FragmentProc f b) = do 
+  	assemlist <- execWriterT $ munchStm (sseq b)
+  	bufferTemps <- replicateM 3 nextTemp
+  	let bufferCalleeSaves = [ OPER2 MOV (Reg $ bufferTemps!!0) (Reg ebx),
+  		OPER2 MOV (Reg $ bufferTemps!!1) (Reg edi),
+  		OPER2 MOV (Reg $ bufferTemps!!2) (Reg esi) ]
+  	let restoreCalleeSaves = [ OPER2 MOV (Reg ebx) (Reg $ bufferTemps!!0),
+  		OPER2 MOV (Reg edi) (Reg $ bufferTemps!!1),
+  		OPER2 MOV (Reg esi) (Reg $ bufferTemps!!2) ] -- ToDo: evtl. hier den ganzen funktionsepilog hier anfügen (mit ret)
+  	return $ FragmentProc f (bufferCalleeSaves ++ assemlist ++ restoreCalleeSaves) 
+
+
+--spill :: f -> [a] -> [Temp] -> m (f, [a])
+  spill f assems temps = foldM (\ (frame,instrs) temp -> spillOne frame instrs temp) (f,assems) temps
+
+  printAssembly fragments = return $ concat $ map (\ f -> prolog f ++ functioncode f ++ epilog f ++ "\n") fragments where
+  	prolog :: Fragment X86Frame [X86Assem] -> String
+  	prolog (FragmentProc frame instrs) = showAssems [ OPER1 PUSH (Reg ebp), OPER2 MOV (Reg ebp) (Reg esp), OPER2 SUB (Reg esp) (Imm (size frame)) ]
+  	functioncode :: Fragment X86Frame [X86Assem] -> String
+  	functioncode (FragmentProc _ instrs) = showAssems instrs
+  	epilog :: Fragment X86Frame [X86Assem] -> String
+  	epilog (FragmentProc frame instrs) = showAssems [ OPER2 MOV (Reg esp) (Reg ebp), OPER1 POP (Reg ebp), OPER0 RET ]
+  	showAssems :: [X86Assem] -> String
+  	showAssems instrs = concat $ map (\ instr -> (show instr ++ "\n")) instrs
+
+
+
+-- Moves single Temp to Memory: Replaces occurrences with a new temp, loads the value from memory before use, saves it to memory after defs
+-- example: "add t4 1" -> ["mov t42 [ebp+12]", "add t42 1", "mov [ebp+12] t42"] (also returns the updated frame)
+spillOne :: (MachineSpecifics m X86Assem f) => f -> [X86Assem] -> Temp -> m (f, [X86Assem])
+spillOne f assems temp = do
+	(f', newLocal) <- allocLocal f InMemory
+	(newLocal, _) <- runWriterT $ munchExp newLocal -- Hier darf nichts in die monade geschrieben werden!!! nochmal überprüfen ob OK!!!
+	newTemp <- nextTemp
+	let assems' = mapM (tempToMemory temp newLocal newTemp) assems
+	return (f', concat assems') where 
+		tempToMemory :: Temp -> Operand -> Temp -> X86Assem -> [X86Assem]
+		tempToMemory temp newLocal newTemp instr = loadTemp ++ [newInstr] ++ saveTemp where
+			newInstr = rename instr (\ t -> if t==temp then newTemp else t)
+			loadTemp = if temp `elem` (use instr) then [(OPER2 MOV (Reg newTemp) newLocal)] else []
+			saveTemp = if temp `elem` (def instr) then [(OPER2 MOV newLocal (Reg newTemp))] else []
+
+
 
