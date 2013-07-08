@@ -3,7 +3,7 @@ module Backend.Liveness where
 
 import Backend.MachineSpecifics
 import Backend.X86Assem
-import Backend.X86Machine
+--import Backend.X86Machine
 import Backend.InstructionSelection
 import Backend.Names
 import Data.List

@@ -1,7 +1,7 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving, UndecidableInstances, TypeSynonymInstances, FlexibleInstances #-}
 
 module Backend.Names(
-  Temp, Label, mkLabel, mkNamedTemp,
+  Temp (..), Label, mkLabel, mkNamedTemp,
   MonadNameGen, nextTemp, nextLabel, 
   NameGen, runNameGen,
   NameGenT, runNameGenT

@@ -25,15 +25,6 @@ instance Frame X86Frame where
   allocLocal f InMemory = error "dummy machine has no memory model"
   makeProc f body returnExp = return $ SEQ body $ MOVE (TEMP (returnTemp f)) returnExp
 
-class (Show f) => Frame f where
-  name :: f -> String
-  params :: f -> [Exp] --
-  size :: f -> Int
-  allocLocal :: MonadNameGen m => f -> Location -> m (f, Exp) --
-  makeProc :: MonadNameGen m => f -> Stm -> Exp -> m Stm --
-
-
-
 
 newtype X86MachineT m a = X86MachineT { runX86MachineT :: NameGenT m a }
    deriving (Monad, MonadNameGen, MonadTrans)
