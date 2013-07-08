@@ -1,75 +1,58 @@
+{-# LANGUAGE EmptyDataDecls,MultiParamTypeClasses, GeneralizedNewtypeDeriving, ScopedTypeVariables #-}
 module Backend.X86Machine where
 import Backend.Names
+import Backend.X86Assem
+import qualified Backend.Tree as B
+import Backend.InstructionSelection
 import Backend.MachineSpecifics
+import Control.Monad.Trans.Writer.Strict
+import Control.Monad
+import Control.Monad.Trans.Identity
+import Control.Monad.Trans
+import Backend.DummyMachine
+import Backend.Names
 
-data Operand = Imm Int | Reg Temp | Mem { base::(Maybe Temp), scale::Int, index::(Maybe Temp) } deriving (Eq)
-data Cmp = E | NE | L | LE | G | GE | Z deriving (Show, Eq)
-data Oper2 = MOV | ADD | SUB | SHL | SHR | SAL | SAR | AND | OR | XOR | TEST | CMP | LEA  deriving (Show, Eq)
-data Oper1 = PUSH | POP | NEG | NOT | INC | DEC | IMUL | IDIV | ENTER  deriving (Show, Eq)
-data Oper0 = RET | LEAVE | NOP deriving (Show, Eq)
+data X86Frame = X86Frame {fname :: String, fparams :: [Temp], locals :: [Temp], returnTemp :: Temp} deriving Show
 
-data X86Assem =
-	  OPER2 Oper2 Operand Operand
-	| OPER1 Oper1 Operand
-	| OPER0 Oper0
-	| JMP Label | J Cmp Label | CALL Label
-	| LABEL Label deriving (Eq)
+instance Frame X86Frame where
+  name f = fname f
+  params f = [ TEMP t | t <- fparams f ]
+  size f = (length (params f)) + (length (locals f))
+  allocLocal f Anywhere = do 
+        t <- nextTemp 
+        return (X86Frame (fname f) (fparams f) (t:(locals f)) (returnTemp f),
+                TEMP t)
+  allocLocal f InMemory = error "dummy machine has no memory model"
+  makeProc f body returnExp = return $ SEQ body $ MOVE (TEMP (returnTemp f)) returnExp
 
-instance Show Operand where
-  show (Imm int) = show int
-  show (Reg temp) = show temp
-  show (Mem (Just base) scale (Just index)) = "DWORD PTR [" ++ (show base) ++ (show scale) ++ "*" ++ (show index) ++ "]"
-  show (Mem (Just base) scale Nothing) = "DWORD PTR ["++ (show base) ++ "]"
-instance Show X86Assem where
-  show (OPER2 op arg1 arg2) = (show op) ++ " " ++ (show arg1) ++ ", " ++ (show arg2)
-  show (OPER1 op arg) = (show op) ++ " " ++ (show arg)
-  show (OPER0 op) = (show op)
-  show (CALL lab) = "CALL " ++ lab
-  show (J cmp lab) = "J" ++ (show cmp) ++ " " ++ lab
-  show (JMP lab) = "JMP " ++ lab
-  show (LABEL lab) = lab ++ ":"
+class (Show f) => Frame f where
+  name :: f -> String
+  params :: f -> [Exp] --
+  size :: f -> Int
+  allocLocal :: MonadNameGen m => f -> Location -> m (f, Exp) --
+  makeProc :: MonadNameGen m => f -> Stm -> Exp -> m Stm --
 
-instance Assem X86Assem where
-  use (OPER2 MOV _ (Reg src)) = [src]
-  use (OPER2 LEA _ (Reg src)) = [src]
-  use (OPER2 _ (Reg dest) (Reg src)) = [dest, src]
-  use (OPER1 PUSH (Reg src)) = [src] 
-  use (OPER1 POP _) = []
-  use (OPER1 IMUL (Reg src)) = [src, mkNamedTemp "%eax"]
-  use (OPER1 IDIV (Reg src)) = [src, mkNamedTemp "%eax"]
-  use (OPER1 ENTER (Reg src)) = [src]
-  use (OPER1 _ (Reg src)) = [src] -- NEG NOT INC DEC
-  use (CALL _) = [mkNamedTemp "%eax", mkNamedTemp "%ecx", mkNamedTemp "%edx"]
-  use _ = []
 
-  def (OPER2 _ (Reg dest) _) = [dest] -- ToDo: TEST?
-  def (OPER1 PUSH _) = []
-  def (OPER1 POP (Reg dest)) = [dest]
-  def (OPER1 IMUL _) = [mkNamedTemp "%eax"]
-  def (OPER1 IDIV _) = [mkNamedTemp "%eax", mkNamedTemp "%edx"]
-  def (OPER1 ENTER _) = []
-  def (OPER1 _ (Reg dest)) = [dest]
-  def (CALL _) = [mkNamedTemp "%eax"]
-  def _ = []
-  
-  jumps (JMP lab) = [lab]
-  jumps (J _ lab) = [lab]
-  jumps _ = []
 
-  isFallThrough (J _ _) = False
-  isFallThrough (JMP _) = False
-  isFallThrough _ = True
 
-  isMoveBetweenTemps (OPER2 MOV (Reg dest) (Reg src)) = Just (dest,src)
-  isMoveBetweenTemps _ = Nothing
+newtype X86MachineT m a = X86MachineT { runX86MachineT :: NameGenT m a }
+   deriving (Monad, MonadNameGen, MonadTrans)
 
-  isLabel (LABEL l) = Just l
-  isLabel _ = Nothing
+withX86Machine :: Monad m => X86MachineT m a -> m a
+withX86Machine = runNameGenT . runX86MachineT
 
-  rename (OPER2 o (Reg t1) (Reg t2)) f = OPER2 o (Reg (f t1)) (Reg (f t2))
-  rename (OPER2 o (Reg t1) op2) f = OPER2 o (Reg (f t1))  op2
-  rename (OPER2 o op1 (Reg t2)) f = OPER2 o op1 (Reg (f t2))
-  rename (OPER1 o (Reg t)) f = OPER1 o (Reg (f t))
-  rename i _ = i
+instance (Monad m) => MachineSpecifics (X86MachineT m) X86Assem X86Frame where
+  wordSize = return 4
+  mkFrame name nparams =
+    do paramTemps <- replicateM nparams nextTemp 
+       returnTemp <- nextTemp
+       return $ DummyFrame name paramTemps [] returnTemp
+  codeGen (FragmentProc f b) = do 
+  	assemlist <- execWriterT $ munchStm (B.sseq b)
+  	return $ FragmentProc f assemlist
+  allRegisters = return Nothing
+  generalPurposeRegisters = return Nothing
 
+  spill frame body temps = return (frame, []) -- todo
+  printAssembly frags = return "" -- todo
 

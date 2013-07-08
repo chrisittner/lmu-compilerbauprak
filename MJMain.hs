@@ -10,6 +10,7 @@ import Backend.MachineSpecifics
 import Backend.DummyMachine
 import Backend.Cmm
 import Backend.Canonicalize
+import Backend.X86Assem
 import Backend.X86Machine
 import Backend.InstructionSelection
 import Backend.Liveness

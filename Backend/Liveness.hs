@@ -2,27 +2,18 @@
 module Backend.Liveness where
 
 import Backend.MachineSpecifics
+import Backend.X86Assem
 import Backend.X86Machine
 import Backend.InstructionSelection
 import Backend.Names
 import Data.List
 
 data Graph a = Graph [(Int,a)] [((Int,a), (Int,a))] | UGraph [a] [(a, a)] deriving (Show) -- (the Ints guarantee uniqueness, UGraph = graph with unique nodes)
-{-
-addV :: (Eq a) => Graph a -> (Int,a) -> Graph a
-addV (Graph v e) node = Graph (node:v) e
-addE :: (Eq a) => Graph a -> ((Int,a), (Int,a)) -> Graph a
-addE (Graph v e) edge = Graph v (edge:e)
-remV :: (Eq a) =>  Graph a ->  (Int,a) -> Graph a
-remV (Graph v e) node = Graph (v\\[node]) e
-remE :: (Eq a) =>  Graph a -> ((Int,a), (Int,a)) -> Graph a
-remE (Graph v e) edge = Graph v (e\\[edge])
--}
+
 succ' :: (Eq a) =>  Graph a ->  (Int,a) -> [(Int,a)]
 succ' (Graph v e) node = [ y | (x,y) <- e, x==node ]
 pred' :: (Eq a) =>  Graph a -> (Int,a) -> [(Int,a)]
 pred' (Graph v e) node = [ x | (x,y) <- e, y==node ]
-
 enumV :: [X86Assem] -> [(Int, X86Assem)]
 enumV instrs = zip [1..] instrs
 
