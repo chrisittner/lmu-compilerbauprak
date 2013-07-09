@@ -10,7 +10,7 @@ import Control.Monad
 import Control.Monad.Trans.Identity
 import Control.Monad.Trans
 
-munchExp ::  (MachineSpecifics m a f)=> B.Exp -> WriterT [X86Assem] m Operand
+munchExp :: (MachineSpecifics m a f)=> B.Exp -> WriterT [X86Assem] m Operand
 
 munchExp (B.CONST a) = return (Imm a)
 
@@ -38,6 +38,10 @@ munchExp (B.TEMP a) = do
 	let t = mkNamedTemp $ show a
 	return (Reg t)
 
+munchExp (B.MEM (B.BINOP B.MINUS (B.TEMP t) (B.CONST n))) = return $ Mem (Just t) 0 Nothing (Just (negate n))
+munchExp (B.MEM (B.BINOP B.PLUS (B.TEMP t) (B.CONST n))) = return $ Mem (Just t) 0 Nothing (Just n)
+munchExp (B.MEM (B.BINOP B.PLUS (B.CONST n) (B.TEMP t))) = return $ Mem (Just t) 0 Nothing (Just n)
+
 munchExp (B.MEM exp) = do
 	exp <- munchExp exp
 	temp <- case exp of
@@ -46,11 +50,11 @@ munchExp (B.MEM exp) = do
 			tmp <- nextTemp
 			tell [OPER2 MOV (Reg tmp) (Imm t)]
 			return tmp
-		m@(Mem _ _ _) -> do 
+		m@(Mem _ _ _ _) -> do 
 			tmp <- nextTemp
 			tell [OPER2 MOV (Reg tmp) m]
 			return tmp
-	return $ Mem (Just temp) 0 Nothing
+	return $ Mem (Just temp) 0 Nothing Nothing
 
 
 
@@ -123,7 +127,7 @@ munchStm (B.NOP) = tell [OPER0 NOP]
 
 -- if both paramters are Mems, buffer the second one into a (Reg tmp), o/w return second
 bufferIfTwoMems :: (MachineSpecifics m a f) => Operand -> Operand ->  WriterT [X86Assem] m Operand
-bufferIfTwoMems (Mem _ _ _) m@(Mem _ _ _) = do 
+bufferIfTwoMems (Mem _ _ _ _) m@(Mem _ _ _ _) = do 
 	t <- nextTemp
 	tell [OPER2 MOV (Reg t) m]
 	return $ Reg t
@@ -131,7 +135,7 @@ bufferIfTwoMems _ m = return m
 
 -- replaces a Mem by (Reg tmp), tmp containing the calculated memory address (usig LEA)
 bufferMem :: (MachineSpecifics m a f) => Operand ->  WriterT [X86Assem] m Operand
-bufferMem m@(Mem _ _ _) = do 
+bufferMem m@(Mem _ _ _ _) = do
 	t <- nextTemp
 	tell [OPER2 LEA (Reg t) m]
 	return $ Reg t

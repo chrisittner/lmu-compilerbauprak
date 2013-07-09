@@ -11,14 +11,6 @@ import Control.Monad.Trans.Identity
 import Control.Monad.Trans.Writer.Strict
 import Data.List
 
-eax = mkNamedTemp "%eax"
-ebx = mkNamedTemp "%ebx"
-ecx = mkNamedTemp "%ecx"
-edx = mkNamedTemp "%edx"
-ebp = mkNamedTemp "%ebp"
-esp = mkNamedTemp "%esp"
-esi = mkNamedTemp "%esi"
-edi = mkNamedTemp "%edi"
 
 data X86Frame = X86Frame { fname :: String, numParams :: Int, temps :: [Temp], returnTemp :: Temp, numMemoryLocals :: Int } deriving Show
 
@@ -58,14 +50,16 @@ instance (Monad m) => MachineSpecifics (X86MachineT m) X86Assem X86Frame where
   		OPER2 MOV (Reg $ bufferTemps!!2) (Reg esi) ]
   	let restoreCalleeSaves = [ OPER2 MOV (Reg ebx) (Reg $ bufferTemps!!0),
   		OPER2 MOV (Reg edi) (Reg $ bufferTemps!!1),
-  		OPER2 MOV (Reg esi) (Reg $ bufferTemps!!2) ] -- ToDo: evtl. hier den ganzen funktionsepilog hier anfügen (mit ret)
+  		OPER2 MOV (Reg esi) (Reg $ bufferTemps!!2) ]
   	return $ FragmentProc f (bufferCalleeSaves ++ assemlist ++ restoreCalleeSaves) 
 
 
 --spill :: f -> [a] -> [Temp] -> m (f, [a])
   spill f assems temps = foldM (\ (frame,instrs) temp -> spillOne frame instrs temp) (f,assems) temps
 
-  printAssembly fragments = return $ concat $ map (\ f -> prolog f ++ functioncode f ++ epilog f ++ "\n") fragments where
+  printAssembly fragments = return $ ".intel_syntax\n.global main\n\n" ++ (concat $ map (\ f -> fraglabel f ++ prolog f ++ functioncode f ++ epilog f ++ "\n") fragments) where
+  	fraglabel :: Fragment X86Frame [X86Assem] -> String
+  	fraglabel (FragmentProc f _) = name f ++ ":\n"
   	prolog :: Fragment X86Frame [X86Assem] -> String
   	prolog (FragmentProc frame instrs) = showAssems [ OPER1 PUSH (Reg ebp), OPER2 MOV (Reg ebp) (Reg esp), OPER2 SUB (Reg esp) (Imm (size frame)) ]
   	functioncode :: Fragment X86Frame [X86Assem] -> String
@@ -82,7 +76,7 @@ instance (Monad m) => MachineSpecifics (X86MachineT m) X86Assem X86Frame where
 spillOne :: (MachineSpecifics m X86Assem f) => f -> [X86Assem] -> Temp -> m (f, [X86Assem])
 spillOne f assems temp = do
 	(f', newLocal) <- allocLocal f InMemory
-	(newLocal, _) <- runWriterT $ munchExp newLocal -- Hier darf nichts in die monade geschrieben werden!!! nochmal überprüfen ob OK!!!
+	(newLocal, _) <- runWriterT $ munchExp newLocal -- munchExp schreibt hier nie in die Monade, übersetzt nur die Speicheraddresse
 	newTemp <- nextTemp
 	let assems' = mapM (tempToMemory temp newLocal newTemp) assems
 	return (f', concat assems') where 

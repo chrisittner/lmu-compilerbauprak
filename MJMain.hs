@@ -14,6 +14,7 @@ import Backend.X86Assem
 import Backend.X86Machine
 import Backend.InstructionSelection
 import Backend.Liveness
+import Backend.RegisterAllocation
 import Control.Monad
 import Control.Monad.Identity
 import System.IO
@@ -46,13 +47,11 @@ main =	do
   -- 7. Translate to x86 assembly
   	x86Fragments <- mapM codeGen canFragments
   -- 8. Register Allocation
-  	finalFragments <- regAlloc x86Fragments
+  	finalFragments <- mapM regAlloc x86Fragments
   -- 9. Code emission
   	printAssembly finalFragments
 
 
--- Todo :
---- IMMER X86Frame statt DummyFram verwenden, sonst muss man irgendwann die params verschieben?
 
 
 

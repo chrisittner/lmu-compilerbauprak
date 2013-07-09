@@ -1,8 +1,18 @@
 module Backend.X86Assem where
 import Backend.Names
 import Backend.MachineSpecifics
+import Text.Printf
 
-data Operand = Imm Int | Reg Temp | Mem { base::(Maybe Temp), scale::Int, index::(Maybe Temp) } deriving (Eq)
+eax = mkNamedTemp "%eax"
+ebx = mkNamedTemp "%ebx"
+ecx = mkNamedTemp "%ecx"
+edx = mkNamedTemp "%edx"
+ebp = mkNamedTemp "%ebp"
+esp = mkNamedTemp "%esp"
+esi = mkNamedTemp "%esi"
+edi = mkNamedTemp "%edi"
+
+data Operand = Imm Int | Reg Temp | Mem { base::(Maybe Temp), scale::Int, index::(Maybe Temp), offset::(Maybe Int) } deriving (Eq)
 data Cmp = E | NE | L | LE | G | GE | Z deriving (Show, Eq)
 data Oper2 = MOV | ADD | SUB | SHL | SHR | SAL | SAR | AND | OR | XOR | TEST | CMP | LEA  deriving (Show, Eq)
 data Oper1 = PUSH | POP | NEG | NOT | INC | DEC | IMUL | IDIV | ENTER  deriving (Show, Eq)
@@ -61,8 +71,8 @@ instance Assem X86Assem where
 instance Show Operand where
   show (Imm int) = show int
   show (Reg temp) = show temp
-  show (Mem (Just base) scale (Just index)) = "DWORD PTR [" ++ (show base) ++ (show scale) ++ "*" ++ (show index) ++ "]"
-  show (Mem (Just base) scale Nothing) = "DWORD PTR ["++ (show base) ++ "]"
+  show (Mem (Just base) scale Nothing (Just n)) = "DWORD PTR [" ++ (show base) ++ (printf "%+d" n) ++ "]" -- (2tes reg nicht verwendet)
+  show (Mem (Just base) scale Nothing Nothing) = "DWORD PTR ["++ (show base) ++ "]"
 instance Show X86Assem where
   show (OPER2 op arg1 arg2) = (show op) ++ " " ++ (show arg1) ++ ", " ++ (show arg2)
   show (OPER1 op arg) = (show op) ++ " " ++ (show arg)
