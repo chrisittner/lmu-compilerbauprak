@@ -154,7 +154,7 @@ trace' tracedstms@((CJUMP cmp e1 e2 trueLabel falseLabel):_) blocks = do
 					else do 
 						dummyLabel <- nextLabel
 						let dummyBlock = [jump falseLabel, LABEL dummyLabel] -- Dummy Block (in reverse)
-						trace' ((reverse (head blocks)) ++ dummyBlock ++ ((CJUMP cmp e2 e1 trueLabel dummyLabel):(tail tracedstms))) (tail blocks)
+						trace' ((reverse (head blocks)) ++ dummyBlock ++ ((CJUMP cmp e1 e2 trueLabel dummyLabel):(tail tracedstms))) (tail blocks)
 
 hasLabel :: Label -> [[Stm]] -> [Stm] -> [[Stm]]
 hasLabel lab results block = if LABEL lab == head block then block:results else results

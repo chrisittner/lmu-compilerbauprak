@@ -74,10 +74,10 @@ instance Show Operand where
   show (Mem (Just base) scale Nothing (Just n)) = "DWORD PTR [" ++ (show base) ++ (printf "%+d" n) ++ "]" -- (2tes reg nicht verwendet)
   show (Mem (Just base) scale Nothing Nothing) = "DWORD PTR ["++ (show base) ++ "]"
 instance Show X86Assem where
-  show (OPER2 op arg1 arg2) = (show op) ++ " " ++ (show arg1) ++ ", " ++ (show arg2)
-  show (OPER1 op arg) = (show op) ++ " " ++ (show arg)
-  show (OPER0 op) = (show op)
-  show (CALL lab) = "CALL " ++ lab
-  show (J cmp lab) = "J" ++ (show cmp) ++ " " ++ lab
-  show (JMP lab) = "JMP " ++ lab
+  show (OPER2 op arg1 arg2) = "\t" ++ (show op) ++ " " ++ (show arg1) ++ ", " ++ (show arg2)
+  show (OPER1 op arg) = "\t" ++ (show op) ++ " " ++ (show arg)
+  show (OPER0 op) = "\t" ++ (show op)
+  show (CALL lab) = "\t" ++ "CALL " ++ lab
+  show (J cmp lab) = "\t" ++ "J" ++ (show cmp) ++ " " ++ lab
+  show (JMP lab) = "\t" ++ "JMP " ++ lab
   show (LABEL lab) = lab ++ ":"

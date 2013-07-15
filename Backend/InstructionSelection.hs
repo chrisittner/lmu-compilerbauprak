@@ -68,7 +68,7 @@ munchStm (B.EXP (B.CALL (B.NAME lab) args)) = do
 	let esp = mkNamedTemp "%esp"
 	let eax = mkNamedTemp "%eax"
 	args <- mapM munchExp args
-	args <- mapM bufferMem args
+--	args <- mapM bufferMem args
 	tell $ map (OPER1 PUSH) (reverse args) -- push args in reversed order
 	tell [CALL lab]
 	tell [OPER2 ADD (Reg esp) (Imm (4*(length args)))] -- reset stack pointer
@@ -78,7 +78,7 @@ munchStm (B.MOVE dest (B.CALL (B.NAME lab) args)) = do
 	let eax = mkNamedTemp "%eax"
 	dest <- munchExp dest
 	args <- mapM munchExp args
-	args <- mapM bufferMem args
+--	args <- mapM bufferMem args
 	tell $ map (OPER1 PUSH) (reverse args) -- push args in reversed order
 	tell [CALL lab]
 	tell [OPER2 ADD (Reg esp) (Imm (4*(length args)))] -- reset stack pointer
@@ -99,6 +99,7 @@ munchStm (B.CJUMP rel e1 e2 trueLab falseLab) = do
 	e1 <- munchExp e1
 	e2 <- munchExp e2
 	e2 <- bufferIfTwoMems e1 e2
+	e1 <- bufferIfImm e1
 	tell [OPER2 CMP e1 e2]
 	let rel' = case rel of 
 		B.EQ -> E
@@ -133,10 +134,19 @@ bufferIfTwoMems (Mem _ _ _ _) m@(Mem _ _ _ _) = do
 	return $ Reg t
 bufferIfTwoMems _ m = return m
 
+
+bufferIfImm :: (MachineSpecifics m a f) => Operand ->  WriterT [X86Assem] m Operand
+bufferIfImm i@(Imm _)= do 
+	t <- nextTemp
+	tell [OPER2 MOV (Reg t) i]
+	return $ Reg t
+bufferIfImm i = return i
+
+{-
 -- replaces a Mem by (Reg tmp), tmp containing the calculated memory address (usig LEA)
 bufferMem :: (MachineSpecifics m a f) => Operand ->  WriterT [X86Assem] m Operand
 bufferMem m@(Mem _ _ _ _) = do
 	t <- nextTemp
 	tell [OPER2 LEA (Reg t) m]
 	return $ Reg t
-bufferMem op = return op
+bufferMem op = return op -}

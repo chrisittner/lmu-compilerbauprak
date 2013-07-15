@@ -10,9 +10,9 @@ import Control.Monad.Trans
 import Control.Monad.Trans.Identity
 import Control.Monad.Trans.Writer.Strict
 import Data.List
+import Debug.Trace
 
-
-data X86Frame = X86Frame { fname :: String, numParams :: Int, temps :: [Temp], returnTemp :: Temp, numMemoryLocals :: Int } deriving Show
+data X86Frame = X86Frame { fname :: String, numParams :: Int, temps :: [Temp], numMemoryLocals :: Int } deriving Show
 
 instance Frame X86Frame where
   name f = fname f
@@ -20,11 +20,11 @@ instance Frame X86Frame where
   size f = numMemoryLocals f
   allocLocal f Anywhere = do 
         t <- nextTemp 
-        return (X86Frame (fname f) (numParams f) (t:(temps f)) (returnTemp f) (numMemoryLocals f),
+        return (X86Frame (fname f) (numParams f) (t:(temps f)) (numMemoryLocals f),
                 TEMP t)
-  allocLocal f InMemory = return (X86Frame (fname f) (numParams f) (temps f) (returnTemp f) ((numMemoryLocals f)+1),
+  allocLocal f InMemory = return (X86Frame (fname f) (numParams f) (temps f) ((numMemoryLocals f)+1),
                 MEM (BINOP MINUS (TEMP ebp) (CONST $ 4 * numMemoryLocals f)) )
-  makeProc f body returnExp = return $ SEQ body $ MOVE (TEMP (returnTemp f)) returnExp
+  makeProc f body returnExp = return $ SEQ body $ MOVE (TEMP eax) returnExp
 
 
 
@@ -36,9 +36,7 @@ withX86Machine = runNameGenT . runX86MachineT
 
 instance (Monad m) => MachineSpecifics (X86MachineT m) X86Assem X86Frame where
   wordSize = return 4
-  mkFrame name nparams = do
-  	returnTemp <- nextTemp
-  	return $ X86Frame name nparams [] returnTemp 0
+  mkFrame name nparams = return $ X86Frame name nparams [] 0
   allRegisters = return [eax, ebx, ecx, edx, esi, edi, esp, ebp]
   generalPurposeRegisters = return [eax, ebx, ecx, edx, esi, edi]
 
@@ -50,11 +48,15 @@ instance (Monad m) => MachineSpecifics (X86MachineT m) X86Assem X86Frame where
   		OPER2 MOV (Reg $ bufferTemps!!2) (Reg esi) ]
   	let restoreCalleeSaves = [ OPER2 MOV (Reg ebx) (Reg $ bufferTemps!!0),
   		OPER2 MOV (Reg edi) (Reg $ bufferTemps!!1),
-  		OPER2 MOV (Reg esi) (Reg $ bufferTemps!!2) ]
+  		OPER2 MOV (Reg esi) (Reg $ bufferTemps!!2), 
+  		OPER2 MOV (Reg esp) (Reg ebp),
+  		OPER1 POP (Reg ebp),
+  		OPER0 RET ]
   	return $ FragmentProc f (bufferCalleeSaves ++ assemlist ++ restoreCalleeSaves) 
 
 
 --spill :: f -> [a] -> [Temp] -> m (f, [a])
+  spill f assems temps | trace ("spill:\n" ++ show f ++ "\n" ++ show assems ++ "\n" ++ show temps ++ "\n\n") False = undefined {-%%%-}
   spill f assems temps = foldM (\ (frame,instrs) temp -> spillOne frame instrs temp) (f,assems) temps
 
   printAssembly fragments = return $ ".intel_syntax\n.global main\n\n" ++ (concat $ map (\ f -> fraglabel f ++ prolog f ++ functioncode f ++ epilog f ++ "\n") fragments) where
@@ -65,7 +67,7 @@ instance (Monad m) => MachineSpecifics (X86MachineT m) X86Assem X86Frame where
   	functioncode :: Fragment X86Frame [X86Assem] -> String
   	functioncode (FragmentProc _ instrs) = showAssems instrs
   	epilog :: Fragment X86Frame [X86Assem] -> String
-  	epilog (FragmentProc frame instrs) = showAssems [ OPER2 MOV (Reg esp) (Reg ebp), OPER1 POP (Reg ebp), OPER0 RET ]
+  	epilog (FragmentProc frame instrs) = showAssems [ ] -- bereits in codeGen angehängt (um die calleeSaves zu retten)
   	showAssems :: [X86Assem] -> String
   	showAssems instrs = concat $ map (\ instr -> (show instr ++ "\n")) instrs
 

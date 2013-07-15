@@ -112,12 +112,12 @@ translateStm s addrlist (F.ArrayAssignStm arrayname indexexp exp) = do
 	lexit <- nextLabel
 	exp <- translateExp s addrlist exp
 	let dest' = MEM (BINOP PLUS (BINOP MUL (CONST wordsize) (BINOP PLUS (CONST 1) indexexp)) (addr arrayname addrlist) )
-	return $ sseq [ CJUMP {rel=LT, leftE=indexexp, rightE=addr arrayname addrlist, trueLab=ltrue, falseLab=lfalse},
+	return $ sseq [ CJUMP {rel=LT, leftE=indexexp, rightE=MEM (addr arrayname addrlist), trueLab=ltrue, falseLab=lfalse},
 		LABEL ltrue,
 		MOVE {dest =dest', src=exp},
 		jump lexit,
 		LABEL lfalse,
-		EXP $ CALL {func=NAME "L_raise", args = [(CONST 42)] }, 
+		EXP $ CALL {func=NAME "L_raise", args = [(CONST 23)] }, 
 		LABEL lexit ]
 
 
@@ -152,7 +152,7 @@ translateExp s addrlist (F.ArrayGetExp nameexp index) = do
 	lfalse <- nextLabel
 	lexit <- nextLabel
 	index <- translateExp s addrlist index
-	return $ ESEQ  (sseq [ CJUMP {rel=LT, leftE=index, rightE= name, trueLab=ltrue, falseLab=lfalse},
+	return $ ESEQ  (sseq [ CJUMP {rel=LT, leftE=index, rightE=(MEM name), trueLab=ltrue, falseLab=lfalse},
 		LABEL ltrue,
 		NOP,
 		jump lexit,
@@ -183,7 +183,9 @@ translateExp _ addrlist (F.ThisExp)  = return (addr "This" addrlist)
 translateExp s addrlist (F.IntArrayDeclExp length) = do
 	length <- translateExp s addrlist length
 	wordsize <- wordSize
-	return $ CALL {func = NAME "L_halloc", args=[(BINOP MUL (BINOP PLUS (CONST 1) length) (CONST wordsize))]}
+	t <- nextTemp
+	return $ ESEQ (sseq [MOVE (TEMP t) CALL {func = NAME "L_halloc", args=[(BINOP MUL (BINOP PLUS (CONST 1) length) (CONST wordsize))]},
+		MOVE (MEM (TEMP t)) length]) (TEMP t)
 
 translateExp (p@(Program classes),_,_) _ (F.NewObjExp classname) = do 
 	wordsize <- wordSize
