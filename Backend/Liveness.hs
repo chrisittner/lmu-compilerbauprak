@@ -18,9 +18,8 @@ pred' (Graph v e) node = [ x | (x,y) <- e, y==node ]
 enumV :: [X86Assem] -> [(Int, X86Assem)]
 enumV instrs = zip [1..] instrs
 
-makeCFG :: [(Int, X86Assem)] -> [(Int, X86Assem)] -> Graph X86Assem -- CFG = Control flow graph
-{- makeCFG instrs _ | trace ("makeCFG: "++show instrs) False = undefined {-%%%-} -}
-makeCFG [] _ = Graph [] ([]++trace "foo" []) {-%%%-}
+makeCFG :: [(Int, X86Assem)] ->[(Int, X86Assem)] -> Graph X86Assem -- CFG = Control flow graph
+makeCFG [] _ = Graph [] []
 makeCFG (instr:rest) l = (Graph [instr] (makeEdges instr l)) `joinG` (makeCFG rest l) where
  makeEdges:: (Int, X86Assem) -> [(Int, X86Assem)] -> [((Int, X86Assem), (Int, X86Assem))]
  makeEdges (n, instr) list
@@ -31,26 +30,26 @@ joinG ::(Eq a) => Graph a -> Graph a -> Graph a
 joinG (Graph v1 e1) (Graph v2 e2) = Graph (v1++v2) (e1++e2)
 
 makeLG :: Graph X86Assem -> Graph (X86Assem, [Temp])
-makeLG _ | trace "makeLG" False = undefined {-%%%-}
-makeLG cfg@(Graph nodes edges) = makeLiveTemps cfg endlabel where
-	endlabel = head $ [ (n, (instr, [])) | i@(n, instr) <- nodes, succ' cfg i == [] ]++trace "foo" []
+makeLG cfg@(Graph nodes edges) = makeright (makeLiveTemps cfg endlabel) where
+	endlabel = (fst haad , (fst $ snd haad, snd $ snd haad, []))
+	haad = head [ (n, (instr, [])) | i@(n, instr) <- nodes, succ' cfg i == [] ]
+	makeright :: (Graph (X86Assem, [Temp], [(Int, X86Assem)])) -> Graph (X86Assem, [Temp])
+	--makeright f | trace ("makeright:\n" ++ show f ++ "\n") False = undefined {-%%%-}
+	makeright (Graph nodes _ ) = Graph (map (\(n, (instr, lives, olds)) -> (n, (instr, lives))) nodes) []
 
-makeLiveTemps :: Graph X86Assem -> (Int, (X86Assem, [Temp])) -> Graph (X86Assem, [Temp])
-makeLiveTemps g i | trace ("makeLiveTemps: "++ show i ) False = undefined {-%%%-}
-makeLiveTemps cfg (n, (instr, lives)) = foldl joinG (Graph newnodes []) (map (makeLiveTemps cfg) newnodes')
-	where 
-		newnodes =  map (\ (m, i) -> (m, (i, (nub (lives ++ (use i))) \\ (def i)))) (pred' cfg (n, instr)) --terminiert nicht
-		newnodes' = trace (show newnodes) newnodes {-%%%-}
-
+makeLiveTemps :: Graph X86Assem -> (Int, (X86Assem, [Temp], [(Int, X86Assem)])) -> Graph (X86Assem, [Temp], [(Int, X86Assem)])
+--makeLiveTemps f g | trace ("makeright:\n" ++ show f ++ "\n") False = undefined {-%%%-}
+makeLiveTemps cfg (n, (instr, lives, oldnodes)) = (foldl joinG (Graph newnodes []) (map (makeLiveTemps cfg) newnodes))
+  where newnodes = map (\ (m, i) -> (m, (i, ((lives ++ (use i)) \\ (def i)), (n, instr):oldnodes))) ((pred' cfg (n, instr)) \\ oldnodes)
+	
 interferG :: Graph (X86Assem, [Temp]) -> Graph Temp
-interferG _ | trace "interferG" False = undefined {-%%%-}
-interferG (Graph nodes _) = UGraph (nub (concat (map snd (map snd nodes)))) ((foldl interf [] nodes)++trace "foo" [])
+interferG (Graph nodes _) = UGraph (nub (concat (map snd (map snd nodes)))) (foldl interf [] nodes)
 
 interf :: [(Temp, Temp)] -> (Int, (X86Assem, [Temp])) -> [(Temp, Temp)]
 interf edges (n, (instr, temps)) = nub ([(x,y)| x <- temps, y <- temps, x<y] ++ edges)
 
 makeInterferenceGraph :: Fragment f [X86Assem] -> Graph Temp
-makeInterferenceGraph _ | trace "makeInterferenceGraph" False = undefined {-%%%-}
+makeInterferenceGraph (FragmentProc f a) | trace ("makeInerferenceGraph:\n" ++ show a ++ "\n") False = undefined {-%%%-}
 makeInterferenceGraph (FragmentProc _ assems) = interferG $ makeLG (makeCFG (enumV assems) (enumV assems))
 
 

@@ -22,7 +22,7 @@ import System.Environment
 import System.Exit
 
 main =	do
-  input <- getContents
+  input <- readFile "minij/Small/TrivialClass.java"
 
 -- um statt dem Dateiinhalt den Dateinamen (mit relativem Pfad) anzugeben: folgende Zeilen einkommentieren:
 --   args <- getArgs
@@ -37,13 +37,11 @@ main =	do
   -- 4. Run type checker:
   let t = typecheck' abstractSyntaxTree symbolTable
 
-  let canFragments = runIdentity . withX86Machine $ do
+  let assemString = runIdentity . withX86Machine $ do
   -- 5. Translate program to intermediate language fragments:
   	ilFragments <- translate' abstractSyntaxTree symbolTable
   -- 6. Canonicalize all fragments (includes blocking and tracing)
-  	mapM canonicalize ilFragments
-
-  let assemString = runIdentity . withX86Machine $ do
+  	canFragments <- mapM canonicalize ilFragments
   -- 7. Translate to x86 assembly
   	x86Fragments <- mapM codeGen canFragments
   -- 8. Register Allocation
