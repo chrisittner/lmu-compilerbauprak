@@ -47,10 +47,14 @@ main =	do
   -- 8. Register Allocation
   	finalFragments <- mapM regAlloc x86Fragments
   -- 9. Code emission
-  	printAssembly finalFragments
+  	return x86Fragments
 
 
+  
 
-
-
-  putStrLn (assemString)
+  putStrLn (show assemString)
+  putStrLn (show $ map makeInterferenceGraph assemString)
+  putStrLn (show $ map (\assems -> (makeLG (makeCFG (enumV assems) (enumV assems)))) (map f assemString)) where
+    f :: Fragment X86Frame [X86Assem] -> [X86Assem]
+    f (FragmentProc f a) = a
+  

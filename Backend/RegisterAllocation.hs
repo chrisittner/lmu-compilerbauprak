@@ -24,6 +24,7 @@ uncolored _ = False
 
 
 build :: Graph Temp ->  ([(Temp, Maybe Temp)], [(Temp, Temp)])
+--build g | trace ("build:\n" ++ show g ++ "\n\n") False = undefined {-%%%-}
 build (UGraph temps edges) = (map f temps, edges) where
 	f :: Temp -> (Temp, Maybe Temp)
 	f t
@@ -32,6 +33,7 @@ build (UGraph temps edges) = (map f temps, edges) where
 
 	 
 simplify :: ([(Temp, Maybe Temp)], [(Temp, Temp)]) -> State [Temp] ([(Temp, Maybe Temp)], [(Temp, Temp)]) 
+--simplify (nodes, edges) | trace ("simplify:\n" ++ show nodes ++ "\n") False = undefined {-%%%-}
 simplify (nodes, edges) = do
   if lowDegNodes == [] then do return (nodes, edges) else do
     stack <- get
@@ -41,6 +43,7 @@ simplify (nodes, edges) = do
 	  
 	  
 selectSpill :: ([(Temp, Maybe Temp)], [(Temp, Temp)]) -> State [Temp] ([(Temp, Maybe Temp)], [(Temp, Temp)])
+--selectSpill (nodes, edges) | trace ("selectSpill:\n" ++ show nodes ++ "\n") False = undefined {-%%%-}
 selectSpill (nodes, edges) = do
   if [ x | x <- nodes, uncolored x] == [] then do return (nodes, edges) else do
     stack <- get
@@ -52,6 +55,7 @@ selectSpill (nodes, edges) = do
 
 
 colorNode :: Temp -> (([(Temp, Maybe Temp)], [(Temp, Temp)]), [Temp]) -> (([(Temp, Maybe Temp)], [(Temp, Temp)]), [Temp]) 
+--colorNode node (interferG@(nodes, edges), properSpills) | trace ("colorNode:\n" ++ show node ++ "\n") False = undefined {-%%%-}
 colorNode node (interferG@(nodes, edges), properSpills)
   | possibleColors == [] = (interferG, node:properSpills) 
   | otherwise            = ((newNode:nodes,edges), properSpills) where
@@ -61,6 +65,7 @@ colorNode node (interferG@(nodes, edges), properSpills)
 
 
 select :: (([(Temp, Maybe Temp)], [(Temp, Temp)]), [Temp]) -> State [Temp] (([(Temp, Maybe Temp)], [(Temp, Temp)]), [Temp])
+--select iGAndSpills@(interferG@(nodes, edges), spills) | trace ("select:\n" ++ show spills ++ "\n") False = undefined {-%%%-}
 select iGAndSpills@(interferG@(nodes, edges), spills) = do
   stack <- get
   if stack == [] then do return iGAndSpills else do
@@ -70,24 +75,24 @@ select iGAndSpills@(interferG@(nodes, edges), spills) = do
 
 
 generateSpillList :: Graph Temp -> [Temp]
-generateSpillList g | trace ("generateSpillList:\n" ++ show g ++ "") False = undefined {-%%%-}
+--generateSpillList g | trace ("generateSpillList:\n" ++ show g ++ "") False = undefined {-%%%-}
 generateSpillList interferG = snd $ evalState ((simplify (build interferG)) >>= selectSpill >>= \graph -> select (graph, [])) []
 
 coloredNodes :: Graph Temp -> [(Temp, Maybe Temp)]
-{- coloredNodes g | trace ("coloredNodes:\n" ++ show g ++ "\n\n") False = undefined {-%%%-} -}
+--coloredNodes g | trace ("coloredNodes:\n" ++ show g ++ "\n\n") False = undefined {-%%%-}
 coloredNodes interferG = fst $ fst $ evalState ((simplify (build interferG)) >>= selectSpill >>= \graph -> select (graph, [])) []
 
 
 regAlloc :: (MachineSpecifics m X86Assem X86Frame) => Fragment X86Frame [X86Assem] -> m (Fragment X86Frame [X86Assem])
-regAlloc f | trace ("regAlloc:\n" ++ show f ++ "\n") False = undefined {-%%%-}
+--regAlloc f | trace ("regAlloc:\n" ++ show f ++ "\n") False = undefined {-%%%-}
 regAlloc fragment@(FragmentProc frame instrs) = do  
-  if spills' == [] then return $ FragmentProc frame regAllocedAssems' else do
+  if spills == [] then return $ FragmentProc frame regAllocedAssems else do
     (frame, assems) <- spill frame instrs spills
     regAlloc (FragmentProc frame assems) where
 	  spills = generateSpillList.makeInterferenceGraph $ fragment
 	  regAllocedAssems = [foldl (\instr -> \node -> (rename instr (\t -> if t == fst node then fromJust $ snd node else t))) instr (coloredNodes.makeInterferenceGraph $ fragment) | instr <- instrs] -- aufhübschen
-	  regAllocedAssems' = trace ("rA:regAllocedAssems: " ++ show regAllocedAssems ++ "\n") regAllocedAssems {-%%%-}
-	  spills' = trace ("rA:spills: " ++ show spills) spills {-%%%-}
+	 -- regAllocedAssems' = trace ("rA:regAllocedAssems: " ++ show regAllocedAssems ++ "\n") regAllocedAssems {-%%%-}
+	--  spills' = trace ("rA:spills: " ++ show spills) spills {-%%%-}
 
 
 -- moves zwischen nicht interferierenden temps eliminieren???

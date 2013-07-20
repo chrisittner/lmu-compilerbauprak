@@ -35,6 +35,7 @@ instance Assem X86Assem where
   use (OPER1 IDIV (Reg src)) = [src, mkNamedTemp "%eax"]
   use (OPER1 ENTER (Reg src)) = [src]
   use (OPER1 _ (Reg src)) = [src] -- NEG NOT INC DEC
+  use (OPER0 RET) = [mkNamedTemp "%esi", mkNamedTemp "%edi", mkNamedTemp "%ebx"] 
   use (CALL _) = [mkNamedTemp "%eax", mkNamedTemp "%ecx", mkNamedTemp "%edx"]
   use _ = []
 

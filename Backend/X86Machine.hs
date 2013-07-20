@@ -56,7 +56,7 @@ instance (Monad m) => MachineSpecifics (X86MachineT m) X86Assem X86Frame where
 
 
 --spill :: f -> [a] -> [Temp] -> m (f, [a])
-  spill f assems temps | trace ("spill:\n" ++ show f ++ "\n" ++ show assems ++ "\n" ++ show temps ++ "\n\n") False = undefined {-%%%-}
+--  spill f assems temps | trace ("spill:\n" ++ show f ++ "\n" ++ show assems ++ "\n" ++ show temps ++ "\n\n") False = undefined {-%%%-}
   spill f assems temps = foldM (\ (frame,instrs) temp -> spillOne frame instrs temp) (f,assems) temps
 
   printAssembly fragments = return $ ".intel_syntax\n.global main\n\n" ++ (concat $ map (\ f -> fraglabel f ++ prolog f ++ functioncode f ++ epilog f ++ "\n") fragments) where
