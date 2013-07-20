@@ -128,22 +128,31 @@ translateExp :: (Frame f, MachineSpecifics m a f) => (SymbolTree, SymbolTree, Sy
 translateExp s addrlist (F.OpExp exp1 operation exp2) = do 
 	exp1 <- translateExp s addrlist exp1
 	exp2 <- translateExp s addrlist exp2
-	case operation of 
-		F.OpAnd -> return $ exp1 `Backend.Tree.and` exp2
+	case operation of
 		F.OpPlus -> return $ exp1 `plus` exp2
 		F.OpMinus -> return $ exp1 `minus` exp2
 		F.OpTimes -> return $ exp1 `times` exp2
 		F.OpDivide -> return $ exp1 `divide`exp2
-		F.OpLt -> do
-		t <- nextTemp
-		ltrue <- nextLabel
-		lfalse <- nextLabel
-		let cond = sseq [ MOVE (TEMP t) (CONST 0), 
-		      	CJUMP {rel=LT, leftE=exp1, rightE=exp2, trueLab=ltrue, falseLab=lfalse},
-		      	LABEL ltrue,
-		      	MOVE (TEMP t) (CONST 1),
-		      	LABEL lfalse ]
-		return $ ESEQ cond (TEMP t)
+		F.OpAnd ->  do -- lazy evaluation of &&
+			tmp <- nextTemp
+			ltrue <- nextLabel
+			lfalse <- nextLabel
+			let lazyAnd = sseq [ MOVE (TEMP tmp) (CONST 0),
+				CJUMP {rel=EQ, leftE=exp1, rightE=(CONST 0), trueLab=ltrue, falseLab=lfalse},
+				LABEL lfalse,
+				MOVE (TEMP tmp) exp2,
+				LABEL ltrue]
+			return $ ESEQ lazyAnd (TEMP tmp) 
+		F.OpLt -> do 
+			t <- nextTemp
+			ltrue <- nextLabel
+			lfalse <- nextLabel
+			let cond = sseq [ MOVE (TEMP t) (CONST 0), 
+				CJUMP {rel=LT, leftE=exp1, rightE=exp2, trueLab=ltrue, falseLab=lfalse},
+				LABEL ltrue,
+				MOVE (TEMP t) (CONST 1),
+				LABEL lfalse ]
+			return $ ESEQ cond (TEMP t)
 
 translateExp s addrlist (F.ArrayGetExp nameexp index) = do 
 	name <- translateExp s addrlist nameexp

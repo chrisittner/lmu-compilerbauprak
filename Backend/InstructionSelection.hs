@@ -9,6 +9,7 @@ import Control.Monad.Trans.Writer.Strict
 import Control.Monad
 import Control.Monad.Trans.Identity
 import Control.Monad.Trans
+import Debug.Trace
 
 munchExp :: (MachineSpecifics m a f)=> B.Exp -> WriterT [X86Assem] m Operand
 
@@ -16,10 +17,8 @@ munchExp (B.CONST a) = return (Imm a)
 
 munchExp (B.BINOP op a b) = do 
 	t <- nextTemp
-	let eax = mkNamedTemp "%eax"
 	a <- munchExp a
 	b <- munchExp b
-	a <- bufferIfTwoMems b a
 	let instr = case op of
 		B.PLUS -> [OPER2 MOV (Reg t)  a, OPER2 ADD (Reg t)  b]
 		B.MINUS -> [OPER2 MOV (Reg t) a, OPER2 SUB (Reg t) b]
@@ -34,9 +33,7 @@ munchExp (B.BINOP op a b) = do
 	tell instr
 	return $ Reg t
 
-munchExp (B.TEMP a) = do
-	let t = mkNamedTemp $ show a
-	return (Reg t)
+munchExp (B.TEMP a) = return (Reg a)
 
 munchExp (B.MEM (B.BINOP B.MINUS (B.TEMP t) (B.CONST n))) = return $ Mem (Just t) 0 Nothing (Just (negate n))
 munchExp (B.MEM (B.BINOP B.PLUS (B.TEMP t) (B.CONST n))) = return $ Mem (Just t) 0 Nothing (Just n)
@@ -65,8 +62,6 @@ munchStm :: (MachineSpecifics m a f)=> B.Stm -> WriterT [X86Assem] m ()
 munchStm (B.SEQ stm1 stm2) = munchStm stm1 >> munchStm stm2
 
 munchStm (B.EXP (B.CALL (B.NAME lab) args)) = do
-	let esp = mkNamedTemp "%esp"
-	let eax = mkNamedTemp "%eax"
 	args <- mapM munchExp args
 --	args <- mapM bufferMem args
 	tell $ map (OPER1 PUSH) (reverse args) -- push args in reversed order
@@ -74,8 +69,6 @@ munchStm (B.EXP (B.CALL (B.NAME lab) args)) = do
 	tell [OPER2 ADD (Reg esp) (Imm (4*(length args)))] -- reset stack pointer
 
 munchStm (B.MOVE dest (B.CALL (B.NAME lab) args)) = do
-	let esp = mkNamedTemp "%esp"
-	let eax = mkNamedTemp "%eax"
 	dest <- munchExp dest
 	args <- mapM munchExp args
 --	args <- mapM bufferMem args
@@ -142,11 +135,11 @@ bufferIfImm i@(Imm _)= do
 	return $ Reg t
 bufferIfImm i = return i
 
-{-
+
 -- replaces a Mem by (Reg tmp), tmp containing the calculated memory address (usig LEA)
 bufferMem :: (MachineSpecifics m a f) => Operand ->  WriterT [X86Assem] m Operand
 bufferMem m@(Mem _ _ _ _) = do
 	t <- nextTemp
 	tell [OPER2 LEA (Reg t) m]
 	return $ Reg t
-bufferMem op = return op -}
+bufferMem op = return op

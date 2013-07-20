@@ -106,14 +106,3 @@ regAlloc fragment@(FragmentProc frame instrs) = do
 
 
 
-
-
-
-
-
-
-
-
-
-
-

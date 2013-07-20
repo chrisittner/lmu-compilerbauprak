@@ -5,9 +5,9 @@ main:
 	PUSH %ebp
 	MOV %ebp, %esp
 	SUB %esp, 0
-	MOV t0, %ebx
-	MOV t1, %edi
-	MOV t2, %esi
+	MOV t131, %ebx
+	MOV t132, %edi
+	MOV t133, %esi
 L$48:
 	PUSH 0
 	CALL L_halloc
@@ -24,9 +24,9 @@ L$48:
 	MOV %eax, 0
 	JMP L$49
 L$49:
-	MOV %ebx, t0
-	MOV %edi, t1
-	MOV %esi, t2
+	MOV %ebx, t131
+	MOV %edi, t132
+	MOV %esi, t133
 	MOV %esp, %ebp
 	POP %ebp
 	RET
@@ -35,25 +35,25 @@ Element$Init:
 	PUSH %ebp
 	MOV %ebp, %esp
 	SUB %esp, 0
-	MOV t6, %ebx
-	MOV t7, %edi
-	MOV t8, %esi
+	MOV t137, %ebx
+	MOV t138, %edi
+	MOV t139, %esi
 L$50:
 	MOV t46, DWORD PTR [%ebp+8]
-	MOV t3, DWORD PTR [%ebp+12]
-	MOV DWORD PTR [t46+0], t3
+	MOV t134, DWORD PTR [%ebp+12]
+	MOV DWORD PTR [t46+0], t134
 	MOV t47, DWORD PTR [%ebp+8]
-	MOV t4, DWORD PTR [%ebp+16]
-	MOV DWORD PTR [t47+4], t4
+	MOV t135, DWORD PTR [%ebp+16]
+	MOV DWORD PTR [t47+4], t135
 	MOV t48, DWORD PTR [%ebp+8]
-	MOV t5, DWORD PTR [%ebp+20]
-	MOV DWORD PTR [t48+8], t5
+	MOV t136, DWORD PTR [%ebp+20]
+	MOV DWORD PTR [t48+8], t136
 	MOV %eax, 1
 	JMP L$51
 L$51:
-	MOV %ebx, t6
-	MOV %edi, t7
-	MOV %esi, t8
+	MOV %ebx, t137
+	MOV %edi, t138
+	MOV %esi, t139
 	MOV %esp, %ebp
 	POP %ebp
 	RET
@@ -62,17 +62,17 @@ Element$GetAge:
 	PUSH %ebp
 	MOV %ebp, %esp
 	SUB %esp, 0
-	MOV t9, %ebx
-	MOV t10, %edi
-	MOV t11, %esi
+	MOV t140, %ebx
+	MOV t141, %edi
+	MOV t142, %esi
 L$52:
 	MOV t49, DWORD PTR [%ebp+8]
 	MOV %eax, DWORD PTR [t49+0]
 	JMP L$53
 L$53:
-	MOV %ebx, t9
-	MOV %edi, t10
-	MOV %esi, t11
+	MOV %ebx, t140
+	MOV %edi, t141
+	MOV %esi, t142
 	MOV %esp, %ebp
 	POP %ebp
 	RET
@@ -81,17 +81,17 @@ Element$GetSalary:
 	PUSH %ebp
 	MOV %ebp, %esp
 	SUB %esp, 0
-	MOV t12, %ebx
-	MOV t13, %edi
-	MOV t14, %esi
+	MOV t143, %ebx
+	MOV t144, %edi
+	MOV t145, %esi
 L$54:
 	MOV t50, DWORD PTR [%ebp+8]
 	MOV %eax, DWORD PTR [t50+4]
 	JMP L$55
 L$55:
-	MOV %ebx, t12
-	MOV %edi, t13
-	MOV %esi, t14
+	MOV %ebx, t143
+	MOV %edi, t144
+	MOV %esi, t145
 	MOV %esp, %ebp
 	POP %ebp
 	RET
@@ -100,17 +100,17 @@ Element$GetMarried:
 	PUSH %ebp
 	MOV %ebp, %esp
 	SUB %esp, 0
-	MOV t15, %ebx
-	MOV t16, %edi
-	MOV t17, %esi
+	MOV t146, %ebx
+	MOV t147, %edi
+	MOV t148, %esi
 L$56:
 	MOV t51, DWORD PTR [%ebp+8]
 	MOV %eax, DWORD PTR [t51+8]
 	JMP L$57
 L$57:
-	MOV %ebx, t15
-	MOV %edi, t16
-	MOV %esi, t17
+	MOV %ebx, t146
+	MOV %edi, t147
+	MOV %esi, t148
 	MOV %esp, %ebp
 	POP %ebp
 	RET
@@ -119,9 +119,9 @@ Element$Equal:
 	PUSH %ebp
 	MOV %ebp, %esp
 	SUB %esp, 0
-	MOV t21, %ebx
-	MOV t22, %edi
-	MOV t23, %esi
+	MOV t152, %ebx
+	MOV t153, %edi
+	MOV t154, %esi
 L$58:
 	MOV t1, 1
 	PUSH DWORD PTR [%ebp+12]
@@ -136,9 +136,9 @@ L$58:
 	CALL Element$Compare
 	ADD %esp, 12
 	MOV t54, %eax
-	MOV t18, 1
-	SUB t18, t54
-	CMP t18, 1
+	MOV t149, 1
+	SUB t149, t54
+	CMP t149, 1
 	JE L$0
 L$1:
 	PUSH DWORD PTR [%ebp+12]
@@ -153,9 +153,9 @@ L$1:
 	CALL Element$Compare
 	ADD %esp, 12
 	MOV t57, %eax
-	MOV t19, 1
-	SUB t19, t57
-	CMP t19, 1
+	MOV t150, 1
+	SUB t150, t57
+	CMP t150, 1
 	JE L$3
 L$4:
 	MOV t58, DWORD PTR [%ebp+8]
@@ -196,9 +196,9 @@ L$6:
 	CALL Element$GetMarried
 	ADD %esp, 4
 	MOV t59, %eax
-	MOV t20, 1
-	SUB t20, t59
-	CMP t20, 1
+	MOV t151, 1
+	SUB t151, t59
+	CMP t151, 1
 	JE L$9
 L$60:
 	JMP L$10
@@ -209,9 +209,9 @@ L$0:
 	MOV t1, 0
 	JMP L$2
 L$59:
-	MOV %ebx, t21
-	MOV %edi, t22
-	MOV %esi, t23
+	MOV %ebx, t152
+	MOV %edi, t153
+	MOV %esi, t154
 	MOV %esp, %ebp
 	POP %ebp
 	RET
@@ -220,17 +220,17 @@ Element$Compare:
 	PUSH %ebp
 	MOV %ebp, %esp
 	SUB %esp, 0
-	MOV t27, %ebx
-	MOV t28, %edi
-	MOV t29, %esi
+	MOV t158, %ebx
+	MOV t159, %edi
+	MOV t160, %esi
 L$61:
 	MOV t5, 0
-	MOV t24, 1
-	ADD t24, DWORD PTR [%ebp+16]
-	MOV t6, t24
+	MOV t155, 1
+	ADD t155, DWORD PTR [%ebp+16]
+	MOV t6, t155
 	MOV t7, 0
-	MOV t25, DWORD PTR [%ebp+16]
-	CMP DWORD PTR [%ebp+12], t25
+	MOV t156, DWORD PTR [%ebp+16]
+	CMP DWORD PTR [%ebp+12], t156
 	JL L$18
 L$19:
 	CMP t7, 1
@@ -240,9 +240,9 @@ L$16:
 	CMP DWORD PTR [%ebp+12], t6
 	JL L$23
 L$24:
-	MOV t26, 1
-	SUB t26, t8
-	CMP t26, 1
+	MOV t157, 1
+	SUB t157, t8
+	CMP t157, 1
 	JE L$20
 L$21:
 	MOV t5, 1
@@ -265,9 +265,9 @@ L$18:
 	MOV t7, 1
 	JMP L$19
 L$62:
-	MOV %ebx, t27
-	MOV %edi, t28
-	MOV %esi, t29
+	MOV %ebx, t158
+	MOV %edi, t159
+	MOV %esi, t160
 	MOV %esp, %ebp
 	POP %ebp
 	RET
@@ -276,18 +276,18 @@ List$Init:
 	PUSH %ebp
 	MOV %ebp, %esp
 	SUB %esp, 0
-	MOV t30, %ebx
-	MOV t31, %edi
-	MOV t32, %esi
+	MOV t161, %ebx
+	MOV t162, %edi
+	MOV t163, %esi
 L$63:
 	MOV t61, DWORD PTR [%ebp+8]
 	MOV DWORD PTR [t61+8], 1
 	MOV %eax, 1
 	JMP L$64
 L$64:
-	MOV %ebx, t30
-	MOV %edi, t31
-	MOV %esi, t32
+	MOV %ebx, t161
+	MOV %edi, t162
+	MOV %esi, t163
 	MOV %esp, %ebp
 	POP %ebp
 	RET
@@ -296,25 +296,25 @@ List$InitNew:
 	PUSH %ebp
 	MOV %ebp, %esp
 	SUB %esp, 0
-	MOV t36, %ebx
-	MOV t37, %edi
-	MOV t38, %esi
+	MOV t167, %ebx
+	MOV t168, %edi
+	MOV t169, %esi
 L$65:
 	MOV t62, DWORD PTR [%ebp+8]
-	MOV t33, DWORD PTR [%ebp+20]
-	MOV DWORD PTR [t62+8], t33
+	MOV t164, DWORD PTR [%ebp+20]
+	MOV DWORD PTR [t62+8], t164
 	MOV t63, DWORD PTR [%ebp+8]
-	MOV t34, DWORD PTR [%ebp+12]
-	MOV DWORD PTR [t63+0], t34
+	MOV t165, DWORD PTR [%ebp+12]
+	MOV DWORD PTR [t63+0], t165
 	MOV t64, DWORD PTR [%ebp+8]
-	MOV t35, DWORD PTR [%ebp+16]
-	MOV DWORD PTR [t64+4], t35
+	MOV t166, DWORD PTR [%ebp+16]
+	MOV DWORD PTR [t64+4], t166
 	MOV %eax, 1
 	JMP L$66
 L$66:
-	MOV %ebx, t36
-	MOV %edi, t37
-	MOV %esi, t38
+	MOV %ebx, t167
+	MOV %edi, t168
+	MOV %esi, t169
 	MOV %esp, %ebp
 	POP %ebp
 	RET
@@ -323,9 +323,9 @@ List$Insert:
 	PUSH %ebp
 	MOV %ebp, %esp
 	SUB %esp, 0
-	MOV t39, %ebx
-	MOV t40, %edi
-	MOV t41, %esi
+	MOV t170, %ebx
+	MOV t171, %edi
+	MOV t172, %esi
 L$67:
 	MOV t10, DWORD PTR [%ebp+8]
 	PUSH 12
@@ -344,9 +344,9 @@ L$67:
 	MOV %eax, t11
 	JMP L$68
 L$68:
-	MOV %ebx, t39
-	MOV %edi, t40
-	MOV %esi, t41
+	MOV %ebx, t170
+	MOV %edi, t171
+	MOV %esi, t172
 	MOV %esp, %ebp
 	POP %ebp
 	RET
@@ -355,19 +355,19 @@ List$SetNext:
 	PUSH %ebp
 	MOV %ebp, %esp
 	SUB %esp, 0
-	MOV t43, %ebx
-	MOV t44, %edi
-	MOV t45, %esi
+	MOV t174, %ebx
+	MOV t175, %edi
+	MOV t176, %esi
 L$69:
 	MOV t67, DWORD PTR [%ebp+8]
-	MOV t42, DWORD PTR [%ebp+12]
-	MOV DWORD PTR [t67+4], t42
+	MOV t173, DWORD PTR [%ebp+12]
+	MOV DWORD PTR [t67+4], t173
 	MOV %eax, 1
 	JMP L$70
 L$70:
-	MOV %ebx, t43
-	MOV %edi, t44
-	MOV %esi, t45
+	MOV %ebx, t174
+	MOV %edi, t175
+	MOV %esi, t176
 	MOV %esp, %ebp
 	POP %ebp
 	RET
@@ -376,9 +376,9 @@ List$Delete:
 	PUSH %ebp
 	MOV %ebp, %esp
 	SUB %esp, 0
-	MOV t50, %ebx
-	MOV t51, %edi
-	MOV t52, %esi
+	MOV t181, %ebx
+	MOV t182, %edi
+	MOV t183, %esi
 L$71:
 	MOV t13, DWORD PTR [%ebp+8]
 	MOV t14, 0
@@ -391,14 +391,14 @@ L$71:
 	MOV t19, DWORD PTR [t69+0]
 	JMP L$27
 L$27:
-	MOV t46, 1
-	SUB t46, t18
-	MOV t70, t46
-	MOV t48, 1
-	SUB t48, t14
-	MOV t47, t70
-	AND t47, t48
-	CMP t47, 1
+	MOV t177, 1
+	SUB t177, t18
+	MOV t70, t177
+	MOV t179, 1
+	SUB t179, t14
+	MOV t178, t70
+	AND t178, t179
+	CMP t178, 1
 	JE L$25
 L$26:
 	MOV %eax, t13
@@ -428,9 +428,9 @@ L$36:
 	MOV t20, 1
 	JMP L$38
 L$30:
-	MOV t49, 1
-	SUB t49, t14
-	CMP t49, 1
+	MOV t180, 1
+	SUB t180, t14
+	CMP t180, 1
 	JE L$36
 L$73:
 	JMP L$37
@@ -490,9 +490,9 @@ L$25:
 	CMP t71, 1
 	JE L$28
 L$72:
-	MOV %ebx, t50
-	MOV %edi, t51
-	MOV %esi, t52
+	MOV %ebx, t181
+	MOV %edi, t182
+	MOV %esi, t183
 	MOV %esp, %ebp
 	POP %ebp
 	RET
@@ -501,9 +501,9 @@ List$Search:
 	PUSH %ebp
 	MOV %ebp, %esp
 	SUB %esp, 0
-	MOV t54, %ebx
-	MOV t55, %edi
-	MOV t56, %esi
+	MOV t185, %ebx
+	MOV t186, %edi
+	MOV t187, %esi
 L$76:
 	MOV t23, 0
 	MOV t24, DWORD PTR [%ebp+8]
@@ -513,9 +513,9 @@ L$76:
 	MOV t25, DWORD PTR [t81+0]
 	JMP L$41
 L$41:
-	MOV t53, 1
-	SUB t53, t26
-	CMP t53, 1
+	MOV t184, 1
+	SUB t184, t26
+	CMP t184, 1
 	JE L$39
 L$40:
 	MOV %eax, t23
@@ -552,9 +552,9 @@ L$39:
 	CMP t82, 1
 	JE L$42
 L$77:
-	MOV %ebx, t54
-	MOV %edi, t55
-	MOV %esi, t56
+	MOV %ebx, t185
+	MOV %edi, t186
+	MOV %esi, t187
 	MOV %esp, %ebp
 	POP %ebp
 	RET
@@ -563,17 +563,17 @@ List$GetEnd:
 	PUSH %ebp
 	MOV %ebp, %esp
 	SUB %esp, 0
-	MOV t57, %ebx
-	MOV t58, %edi
-	MOV t59, %esi
+	MOV t188, %ebx
+	MOV t189, %edi
+	MOV t190, %esi
 L$78:
 	MOV t86, DWORD PTR [%ebp+8]
 	MOV %eax, DWORD PTR [t86+8]
 	JMP L$79
 L$79:
-	MOV %ebx, t57
-	MOV %edi, t58
-	MOV %esi, t59
+	MOV %ebx, t188
+	MOV %edi, t189
+	MOV %esi, t190
 	MOV %esp, %ebp
 	POP %ebp
 	RET
@@ -582,17 +582,17 @@ List$GetElem:
 	PUSH %ebp
 	MOV %ebp, %esp
 	SUB %esp, 0
-	MOV t60, %ebx
-	MOV t61, %edi
-	MOV t62, %esi
+	MOV t191, %ebx
+	MOV t192, %edi
+	MOV t193, %esi
 L$80:
 	MOV t87, DWORD PTR [%ebp+8]
 	MOV %eax, DWORD PTR [t87+0]
 	JMP L$81
 L$81:
-	MOV %ebx, t60
-	MOV %edi, t61
-	MOV %esi, t62
+	MOV %ebx, t191
+	MOV %edi, t192
+	MOV %esi, t193
 	MOV %esp, %ebp
 	POP %ebp
 	RET
@@ -601,17 +601,17 @@ List$GetNext:
 	PUSH %ebp
 	MOV %ebp, %esp
 	SUB %esp, 0
-	MOV t63, %ebx
-	MOV t64, %edi
-	MOV t65, %esi
+	MOV t194, %ebx
+	MOV t195, %edi
+	MOV t196, %esi
 L$82:
 	MOV t88, DWORD PTR [%ebp+8]
 	MOV %eax, DWORD PTR [t88+4]
 	JMP L$83
 L$83:
-	MOV %ebx, t63
-	MOV %edi, t64
-	MOV %esi, t65
+	MOV %ebx, t194
+	MOV %edi, t195
+	MOV %esi, t196
 	MOV %esp, %ebp
 	POP %ebp
 	RET
@@ -620,9 +620,9 @@ List$Print:
 	PUSH %ebp
 	MOV %ebp, %esp
 	SUB %esp, 0
-	MOV t67, %ebx
-	MOV t68, %edi
-	MOV t69, %esi
+	MOV t198, %ebx
+	MOV t199, %edi
+	MOV t200, %esi
 L$84:
 	MOV t28, DWORD PTR [%ebp+8]
 	MOV t89, DWORD PTR [%ebp+8]
@@ -631,9 +631,9 @@ L$84:
 	MOV t30, DWORD PTR [t90+0]
 	JMP L$47
 L$47:
-	MOV t66, 1
-	SUB t66, t29
-	CMP t66, 1
+	MOV t197, 1
+	SUB t197, t29
+	CMP t197, 1
 	JE L$45
 L$46:
 	MOV %eax, 1
@@ -664,9 +664,9 @@ L$45:
 	MOV t30, t95
 	JMP L$47
 L$85:
-	MOV %ebx, t67
-	MOV %edi, t68
-	MOV %esi, t69
+	MOV %ebx, t198
+	MOV %edi, t199
+	MOV %esi, t200
 	MOV %esp, %ebp
 	POP %ebp
 	RET
@@ -675,9 +675,9 @@ LL$Start:
 	PUSH %ebp
 	MOV %ebp, %esp
 	SUB %esp, 0
-	MOV t70, %ebx
-	MOV t71, %edi
-	MOV t72, %esi
+	MOV t201, %ebx
+	MOV t202, %edi
+	MOV t203, %esi
 L$86:
 	PUSH 12
 	CALL L_halloc
@@ -844,42 +844,36 @@ L$86:
 	CALL L_println_int
 	ADD %esp, 4
 	MOV t125, %eax
-	PUSH t35
-	PUSH t31
-	CALL List$Delete
-	ADD %esp, 8
-	MOV t126, %eax
-	MOV t31, t126
 	PUSH t31
 	CALL List$Print
 	ADD %esp, 4
-	MOV t127, %eax
-	MOV t33, t127
+	MOV t126, %eax
+	MOV t33, t126
 	PUSH 33300000
 	CALL L_println_int
 	ADD %esp, 4
-	MOV t128, %eax
+	MOV t127, %eax
 	PUSH t34
 	PUSH t31
 	CALL List$Delete
 	ADD %esp, 8
-	MOV t129, %eax
-	MOV t31, t129
+	MOV t128, %eax
+	MOV t31, t128
 	PUSH t31
 	CALL List$Print
 	ADD %esp, 4
-	MOV t130, %eax
-	MOV t33, t130
+	MOV t129, %eax
+	MOV t33, t129
 	PUSH 44440000
 	CALL L_println_int
 	ADD %esp, 4
-	MOV t131, %eax
+	MOV t130, %eax
 	MOV %eax, 0
 	JMP L$87
 L$87:
-	MOV %ebx, t70
-	MOV %edi, t71
-	MOV %esi, t72
+	MOV %ebx, t201
+	MOV %edi, t202
+	MOV %esi, t203
 	MOV %esp, %ebp
 	POP %ebp
 	RET

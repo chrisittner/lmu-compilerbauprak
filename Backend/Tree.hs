@@ -149,7 +149,6 @@ plus e e' = BINOP PLUS e e'
 
 
 minus :: Exp -> Exp -> Exp
-
 -- subtracting a constant
 minus e (CONST i) = plus (CONST (-i)) e
 
@@ -158,7 +157,6 @@ minus (BINOP PLUS (CONST i) e) (BINOP PLUS (CONST j) e') =
   minus (plus (CONST (i-j)) e) e'
 
 {- unsound for effects:
-
 -- one exp is a difference
 minus e (BINOP MINUS e1 e2) = (plus e2 e) `minus` e1  
 minus (BINOP MINUS e1 e2) e = minus e1 (plus e2 e)
@@ -166,8 +164,6 @@ minus (BINOP MINUS e1 e2) e = minus e1 (plus e2 e)
 -}
 
 minus e e' = BINOP MINUS e e'
-
-
 
 times :: Exp -> Exp -> Exp
 times (CONST i) (CONST j) = CONST $ i * j
@@ -182,13 +178,6 @@ and (CONST 0) e = CONST 0
 and e (CONST 0) = CONST 0
 and (CONST 1) (CONST 1) = CONST 1 
 and e e' = BINOP AND e e'
-
-
--- TODO: 
--- integrate SHL
--- think about normal forms for products/shifts 
--- think about normal forms for boolean expressions
--- optimize e < e' + 1 to e <= e'
 
 
 
