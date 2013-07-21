@@ -40,19 +40,21 @@ makeLG (Graph nodes edges) = dropIns $ makeLG' (Graph nodesEmptyInOut edges) whe
 	dropIns (Graph nodes edges) = Graph (map (\ (n, (instr, ins, outs)) -> (n, (instr, outs))) nodes) edges
 	nodesEmptyInOut = map (\ (n, instr) -> (n, (instr, [], []))) nodes
 makeLG' :: Graph (X86Assem, [Temp], [Temp]) -> Graph (X86Assem, [Temp], [Temp])
---makeLG' (Graph nodes edges) | trace ("makeLG:\n" ++ show nodes ++ "\n") False = undefined {-%%%-}
+makeLG' (Graph nodes edges) | trace ("makeLG:\n" ++ show nodes ++ "\n") False = undefined {-%%%-}
 makeLG' lg@(Graph nodes edges) = if lg == newLg then lg else makeLG' newLg where
 	newLg = foldr update lg nodes where
 		update :: (Int, (X86Assem, [Temp], [Temp])) -> Graph (X86Assem, [Temp], [Temp]) -> Graph (X86Assem, [Temp], [Temp])
 		update node@(n, (instr, ins, outs)) g@(Graph nodes edges) = Graph nodes' edges where
 			nodes' = updatedNode : [node' | node'@(m, _) <- nodes, m/=n]
-			updatedNode = (n, (instr, ins', outs'))
+			updatedNode = (n, (instr, ins'', outs'))
 			ins'  = nub $ (use instr) ++ ((nub outs) \\ (def instr))
---			ins'' = trace (show n ++ "  " ++ show ins'  ++ show outs' ++ " u:" ++ show (use instr) ++ " d:" ++ show (def instr) ) ins'
-			outs' = nub.concat $ [ins | (_, (_, ins, _)) <- ((succs g [node])\\[node])]
-			succs :: (Eq a) => Graph a -> [(Int, a)] -> [(Int, a)] -- closes the list under successors
+			ins'' = trace (show n ++ "  " ++ show ins'  ++ show outs' ++ " u:" ++ show (use instr) ++ " d:" ++ show (def instr) ) ins'
+			outs' = nub.concat $ [ins | (_, (_, ins, _)) <- (succs g node)]
+{-			succs :: (Eq a) => Graph a -> [(Int, a)] -> [(Int, a)] -- closes the list under successors
 			succs g@(Graph nodes edges) succlist = if succlist == succlist' then succlist else succs g succlist' where
-				succlist' = nub.concat $ map (\ t@(n, _) -> t:[node | node@(m,_)<-nodes, (n,m) `elem` edges ]) succlist
+				succlist' = nub.concat $ map (\ t@(n, _) -> t:[node | node@(m,_)<-nodes, (n,m) `elem` edges ]) succlist -}
+			succs :: (Eq a) => Graph a -> (Int, a) -> [(Int, a)]
+			succs g@(Graph nodes edges) (n,_) = [node | node@(m,_)<-nodes, (n,m) `elem` edges ]
 
 
 

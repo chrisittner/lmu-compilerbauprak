@@ -46,7 +46,7 @@ instance Assem X86Assem where
   use (OPER1 ENTER (Mem (Just src) _ _ _ )) = [src]
   use (OPER1 _ (Reg src)) = [src] -- NEG NOT INC DEC
   use (OPER1 _ (Mem (Just src) _ _ _ )) = [src] -- NEG NOT INC DEC
-  use (OPER0 RET) = [esi, edi, ebx] 
+  use (OPER0 RET) = [esi, edi, ebx, ebp, esp] 
   use (CALL _) = [eax, ecx, edx]
   use _ = []
 
