@@ -83,22 +83,37 @@ coloredNodes :: Graph Temp -> [(Temp, Maybe Temp)]
 coloredNodes interferG = fst $ fst $ evalState ((simplify (build interferG)) >>= selectSpill >>= \graph -> select (graph, [])) []
 
 
+
+
 regAlloc :: (MachineSpecifics m X86Assem X86Frame) => Fragment X86Frame [X86Assem] -> m (Fragment X86Frame [X86Assem])
 --regAlloc f | trace ("regAlloc:\n" ++ show f ++ "\n") False = undefined {-%%%-}
-regAlloc fragment@(FragmentProc frame instrs) = do  
-  if spills == [] then return $ FragmentProc frame regAllocedAssems else do
-    (frame, assems) <- spill frame instrs spills
-    regAlloc (FragmentProc frame assems) where
-	  spills = generateSpillList.makeInterferenceGraph $ fragment
-	  regAllocedAssems = [foldl (\instr -> \node -> (rename instr (\t -> if t == fst node then fromJust $ snd node else t))) instr (coloredNodes.makeInterferenceGraph $ fragment) | instr <- instrs] -- aufhübschen
-	 -- regAllocedAssems' = trace ("rA:regAllocedAssems: " ++ show regAllocedAssems ++ "\n") regAllocedAssems {-%%%-}
-	--  spills' = trace ("rA:spills: " ++ show spills) spills {-%%%-}
+regAlloc fragment@(FragmentProc frame instrs) = do
+	if spills == [] then return $ FragmentProc frame regAllocedAssems else do
+		(frame, assems) <- spill frame instrs spills
+		regAlloc (FragmentProc frame assems) where
+			spills = generateSpillList.makeInterferenceGraph $ fragment
+			regAllocedAssems = [assem | assem <- regAllocedAssems', (isMoveBetweenTemps assem) == Nothing || 
+				(fst $ fromJust (isMoveBetweenTemps assem)) /= (snd $ fromJust (isMoveBetweenTemps assem))]
+			regAllocedAssems' = [foldl (\instr -> \node -> (rename instr (\t -> if t == fst node then fromJust $ snd node else t))) instr (coloredNodes.makeInterferenceGraph $ fragment) | instr <- instrs]
+			-- regAllocedAssems' = trace ("rA:regAllocedAssems: " ++ show regAllocedAssems ++ "\n") regAllocedAssems {-%%%-}
+			--  spills' = trace ("rA:spills: " ++ show spills) spills {-%%%-}
 
 
 -- moves zwischen nicht interferierenden temps eliminieren???
 	-- falls nicht: zumindest moves von einem register auf sich selbst löschen !
 -- interference graph falsch? vgl Tr2.java
 -- liveness&registerallocation sind UNLESBAR
+
+
+
+
+
+
+
+
+
+
+
 
 
 

@@ -13,7 +13,7 @@ import Backend.Canonicalize
 import Backend.X86Assem
 import Backend.X86Machine
 import Backend.InstructionSelection
-import Backend.LivenessAnalysis
+import Backend.Liveness
 import Backend.RegisterAllocation
 import Control.Monad
 import Control.Monad.Identity
@@ -23,7 +23,7 @@ import System.Exit
 import qualified Debug.Trace as D
 
 main =	do
-  input <- readFile "minij/Small/TrivialClass.java"
+  input <- getContents
 
 --   args <- getArgs
 --   input <- readFile (args !! 0)
@@ -53,17 +53,18 @@ main =	do
 --  	let b = D.trace (show t2) False
 --  	return t2
   -- 9. Code emission
-  	printAssembly x86Fragments
+--  	printAssembly x86Fragments
+  	return x86Fragments
 
 
 
 
-{-  putStrLn (show assemString)
-  putStrLn (show $ map makeInterferenceGraph assemString)
+
+--  putStrLn (show $ map makeInterferenceGraph assemString)
   putStrLn (show $ map (\assems -> (makeLG (makeCFG (enumV assems) (enumV assems)))) (map f assemString)) where
     f :: Fragment X86Frame [X86Assem] -> [X86Assem]
     f (FragmentProc f a) = a
--}
 
-  putStrLn assemString
+
+--  putStrLn assemString
 
