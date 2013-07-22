@@ -27,11 +27,9 @@ joinG (Graph v1 e1) (Graph v2 e2) = Graph (nub$ v1++v2) (nub$ e1++e2)
 
 makeCFG :: [(Int, X86Assem)] -> [(Int, X86Assem)] -> Graph X86Assem -- Control flow graph
 makeCFG [] _ = Graph [] []
-makeCFG (instr:rest) l = (Graph [instr] (makeEdges instr l)) `joinG` (makeCFG rest l) where
-	makeEdges:: (Int, X86Assem) -> [(Int, X86Assem)] -> [(Int, Int)]
-	makeEdges (n, instr) list
-		| isFallThrough instr = [(n, n+1)| (m, _)<-list, m==n+1]
-		| otherwise = [(n, m) | (m,y) <- list, y `elem` (map LABEL (jumps instr))]
+makeCFG ((n, instr):rest) l = (Graph [(n, instr)] (fallThroughEdge++jumpEdge)) `joinG` (makeCFG rest l) where
+	fallThroughEdge = if isFallThrough instr then [(n, n+1)| (m, _)<-l, m==n+1] else []
+	jumpEdge = [(n, m) | (m,y) <- l, y `elem` (map LABEL (jumps instr))]
 
 makeLG :: Graph X86Assem -> Graph (X86Assem, [Temp]) -- determine the in- and out-sets for each node (slide 251) (first list is ins, second is outs)
 makeLG (Graph nodes edges) = dropIns $ makeLG' (Graph nodesEmptyInOut edges) where
@@ -47,20 +45,17 @@ makeLG' lg@(Graph nodes edges) = if lg == newLg then lg else makeLG' newLg where
 			updatedNode = (n, (instr, ins', outs'))
 			ins'  = nub $ (use instr) ++ ((nub outs) \\ (def instr))
 			outs' = nub.concat $ [ins | (_, (_, ins, _)) <- (succs g node)]
-{-			succs :: (Eq a) => Graph a -> [(Int, a)] -> [(Int, a)] -- closes the list under successors
-			succs g@(Graph nodes edges) succlist = if succlist == succlist' then succlist else succs g succlist' where
-				succlist' = nub.concat $ map (\ t@(n, _) -> t:[node | node@(m,_)<-nodes, (n,m) `elem` edges ]) succlist -}
 			succs :: (Eq a) => Graph a -> (Int, a) -> [(Int, a)] -- returns immidate successors
 			succs g@(Graph nodes edges) (n,_) = [node | node@(m,_)<-nodes, (n,m) `elem` edges ]
 
 interferG :: Graph (X86Assem, [Temp]) -> Graph Temp
-interferG (Graph nodes _) = UGraph (nub.concat $ [ use instr ++ def instr | instr <- map fst (map snd nodes)]) [(x,y) | (x,y) <- (foldl interf [] nodes), (y,x) `notElem` (foldl interf [] nodes)] where
+interferG (Graph nodes _) = trace "interferG" $ UGraph (nub.concat $ [ use instr ++ def instr | instr <- map fst (map snd nodes)]) [(x,y) | (x,y) <- (foldl interf [] nodes), (y,x) `notElem` (foldl interf [] nodes)] where
 	interf :: [(Temp, Temp)] -> (Int, (X86Assem, [Temp])) -> [(Temp, Temp)]
 	interf edges (n, (instr, temps)) = if isMoveBetweenTemps instr == Nothing then nub ([(x,y)| x <- (def instr), y <- temps] ++ edges) else do
 		nub ([(x,y)| x <- (def instr), y <- temps, y /= (snd $ fromJust (isMoveBetweenTemps instr))] ++ edges)
 
 makeInterferenceGraph :: Fragment f [X86Assem] -> Graph Temp
 --makeInterferenceGraph (FragmentProc f a) | trace ("makeInerferenceGraph:\n" ++ show a ++ "\n") False = undefined {-%%%-}
-makeInterferenceGraph (FragmentProc _ assems) = interferG $ makeLG (makeCFG (enumV assems) (enumV assems))
+makeInterferenceGraph (FragmentProc _ assems) = interferG $ makeLG (makeCFG (trace "enumV" (enumV assems)) (enumV assems))
 
 

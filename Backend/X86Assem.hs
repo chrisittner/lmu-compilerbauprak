@@ -26,6 +26,7 @@ data X86Assem =
 	| LABEL Label deriving (Ord, Eq)
 
 instance Assem X86Assem where
+  use (OPER2 MOV (Mem (Just src) _ _ _ ) (Reg src')) = [src, src']
   use (OPER2 MOV _ (Reg src)) = [src]
   use (OPER2 MOV _ (Mem (Just src) _ _ _ )) = [src]
   use (OPER2 MOV (Mem (Just src) _ _ _ ) _) = [src]
@@ -46,7 +47,7 @@ instance Assem X86Assem where
   use (OPER1 ENTER (Mem (Just src) _ _ _ )) = [src]
   use (OPER1 _ (Reg src)) = [src] -- NEG NOT INC DEC
   use (OPER1 _ (Mem (Just src) _ _ _ )) = [src] -- NEG NOT INC DEC
-  use (OPER0 RET) = [esi, edi, ebx, ebp, esp] 
+  use (OPER0 RET) = [esi, edi, ebx, ebp, esp, eax] 
   use (CALL _) = [eax, ecx, edx]
   use _ = []
 
@@ -67,7 +68,6 @@ instance Assem X86Assem where
   jumps (J _ lab) = [lab]
   jumps _ = []
 
-  isFallThrough (J _ _) = False
   isFallThrough (JMP _) = False
   isFallThrough _ = True
 
@@ -96,6 +96,7 @@ instance Show Operand where
   show (Mem (Just base) scale Nothing Nothing) = "DWORD PTR ["++ (show base) ++ "]"
 instance Show X86Assem where
   show (OPER2 op arg1 arg2) = "\t" ++ (show op) ++ " " ++ (show arg1) ++ ", " ++ (show arg2)
+  show (OPER1 ENTER arg) = "\t" ++ (show ENTER) ++ " " ++ (show arg) ++ ", 0"
   show (OPER1 op arg) = "\t" ++ (show op) ++ " " ++ (show arg)
   show (OPER0 op) = "\t" ++ (show op)
   show (CALL lab) = "\t" ++ "CALL " ++ lab

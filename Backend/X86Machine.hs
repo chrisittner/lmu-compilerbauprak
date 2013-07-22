@@ -17,13 +17,13 @@ data X86Frame = X86Frame { fname :: String, numParams :: Int, temps :: [Temp], n
 instance Frame X86Frame where
   name f = fname f
   params f = [ MEM (BINOP PLUS (TEMP ebp) (CONST (8 + 4*n))) | n <- [0..((numParams f)-1)] ] -- Params liegen bei x86 an (%ebp+8)+n*4
-  size f = numMemoryLocals f
+  size f = (numMemoryLocals f) * 4
   allocLocal f Anywhere = do 
         t <- nextTemp 
         return (X86Frame (fname f) (numParams f) (t:(temps f)) (numMemoryLocals f),
                 TEMP t)
   allocLocal f InMemory = return (X86Frame (fname f) (numParams f) (temps f) ((numMemoryLocals f)+1),
-                MEM (BINOP MINUS (TEMP ebp) (CONST $ 4 * numMemoryLocals f)) )
+                MEM (BINOP MINUS (TEMP ebp) (CONST $ 4 * (1 + numMemoryLocals f))) )
   makeProc f body returnExp = return $ SEQ body $ MOVE (TEMP eax) returnExp
 
 
@@ -49,24 +49,24 @@ instance (Monad m) => MachineSpecifics (X86MachineT m) X86Assem X86Frame where
   	let restoreCalleeSaves = [ OPER2 MOV (Reg ebx) (Reg $ bufferTemps!!0),
   		OPER2 MOV (Reg edi) (Reg $ bufferTemps!!1),
   		OPER2 MOV (Reg esi) (Reg $ bufferTemps!!2), 
-  		OPER2 MOV (Reg esp) (Reg ebp),
-  		OPER1 POP (Reg ebp),
+--  		OPER2 MOV (Reg esp) (Reg ebp),
+--  		OPER1 POP (Reg ebp),
+  		OPER0 LEAVE,
   		OPER0 RET ]
   	return $ FragmentProc f (bufferCalleeSaves ++ assemlist ++ restoreCalleeSaves) 
 
 
 --spill :: f -> [a] -> [Temp] -> m (f, [a])
-  spill f assems temps | trace ("spill:\n" ++ show f ++ "\n" ++ show assems ++ "\n" ++ show temps ++ "\n\n") False = undefined {-%%%-}
-  spill f assems temps = do 
-	t <- foldM (\ (frame,instrs) temp -> spillOne frame instrs temp) (f,assems) temps
-	return $ trace ("res::" ++ show t) t 
-	
+  spill f assems temps | trace ("spill:" ++ show temps) False = undefined {-%%%-}
+  spill f assems temps = foldM (\ (frame,instrs) temp -> spillOne frame instrs temp) (f,assems) temps
 
   printAssembly fragments = return $ ".intel_syntax\n.global main\n\n" ++ (concat $ map (\ f -> fraglabel f ++ prolog f ++ functioncode f ++ epilog f ++ "\n") fragments) where
   	fraglabel :: Fragment X86Frame [X86Assem] -> String
   	fraglabel (FragmentProc f _) = name f ++ ":\n"
   	prolog :: Fragment X86Frame [X86Assem] -> String
-  	prolog (FragmentProc frame instrs) = showAssems [ OPER1 PUSH (Reg ebp), OPER2 MOV (Reg ebp) (Reg esp), OPER2 SUB (Reg esp) (Imm (size frame)) ]
+  	prolog (FragmentProc frame instrs) = showAssems [ 
+--  		OPER1 PUSH (Reg ebp), OPER2 MOV (Reg ebp) (Reg esp), OPER2 SUB (Reg esp) (Imm (size frame)) ]
+  		OPER1 ENTER (Imm (size frame))]
   	functioncode :: Fragment X86Frame [X86Assem] -> String
   	functioncode (FragmentProc _ instrs) = showAssems instrs
   	epilog :: Fragment X86Frame [X86Assem] -> String
@@ -82,11 +82,11 @@ spillOne :: (MachineSpecifics m X86Assem f) => f -> [X86Assem] -> Temp -> m (f, 
 spillOne f assems temp = do
 	(f', newLocal) <- allocLocal f InMemory
 	(newLocal, _) <- runWriterT $ munchExp newLocal -- munchExp schreibt hier nie in die Monade, übersetzt nur die Speicheraddresse
-	newTemp <- nextTemp
-	let assems' = map (tempToMemory temp newLocal newTemp) assems
+	newTemps <- replicateM (length assems) nextTemp
+	let assems' = map (tempToMemory temp newLocal) (zip newTemps assems)
 	return (f', concat assems') where 
-		tempToMemory :: Temp -> Operand -> Temp -> X86Assem -> [X86Assem]
-		tempToMemory temp newLocal newTemp instr = loadTemp ++ [newInstr] ++ saveTemp where
+		tempToMemory :: Temp -> Operand -> (Temp, X86Assem) -> [X86Assem]
+		tempToMemory temp newLocal (newTemp, instr) = loadTemp ++ [newInstr] ++ saveTemp where
 			newInstr = rename instr (\ t -> if t==temp then newTemp else t)
 			loadTemp = if temp `elem` (use instr) then [(OPER2 MOV (Reg newTemp) newLocal)] else []
 			saveTemp = if temp `elem` (def instr) then [(OPER2 MOV newLocal (Reg newTemp))] else []
