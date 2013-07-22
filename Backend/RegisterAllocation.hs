@@ -59,10 +59,8 @@ colorNode node (interferG@(nodes, edges), properSpills)
 		possibleColors = [x | x <- map Just generalPurposeRegisters', x `notElem` neighborColors]
 		neighborColors = [ snd neighbor | neighbor <- nodes, (fst neighbor) `elem` ([ x | (x,y) <- edges, y==node]++[ x | (y,x) <- edges, y==node])]
 		newNode = (node, head possibleColors)
---		newNode' = trace (show newNode) newNode
 
 regAlloc :: (MachineSpecifics m X86Assem X86Frame) => Fragment X86Frame [X86Assem] -> m (Fragment X86Frame [X86Assem])
---regAlloc f | trace ("regAlloc:\n" ++ show f ++ "\n") False = undefined {-%%%-}
 regAlloc fragment@(FragmentProc frame instrs) = do
 	if spills == [] then return $ FragmentProc frame cleanedAssems else do
 		(frame, assems) <- spill frame instrs spills
@@ -72,5 +70,4 @@ regAlloc fragment@(FragmentProc frame instrs) = do
 			cleanedAssems = [assem | assem <- regAllocedAssems, (isMoveBetweenTemps assem) == Nothing || 
 				(fst $ fromJust (isMoveBetweenTemps assem)) /= (snd $ fromJust (isMoveBetweenTemps assem))]
 			regAllocedAssems = [foldl (\instr -> \node -> (rename instr (\t -> if t == fst node then fromJust $ snd node else t))) instr coloredNodes | instr <- instrs]
-
 
