@@ -2,6 +2,7 @@ module Backend.X86Assem where
 import Backend.Names
 import Backend.MachineSpecifics
 import Text.Printf
+import Debug.Trace
 
 eax = mkNamedTemp "%eax"
 ebx = mkNamedTemp "%ebx"
@@ -47,7 +48,7 @@ instance Assem X86Assem where
   use (OPER1 ENTER (Mem (Just src) _ _ _ )) = [src]
   use (OPER1 _ (Reg src)) = [src] -- NEG NOT INC DEC
   use (OPER1 _ (Mem (Just src) _ _ _ )) = [src] -- NEG NOT INC DEC
-  use (OPER0 RET) = [esi, edi, ebx, ebp, esp, eax] 
+  use (OPER0 RET) = [eax, esi, edi, ebx, ebp, esp] 
   use (CALL _) = [eax, ecx, edx]
   use _ = []
 

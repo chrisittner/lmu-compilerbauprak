@@ -49,10 +49,12 @@ makeLG' lg@(Graph nodes edges) = if lg == newLg then lg else makeLG' newLg where
 			succs g@(Graph nodes edges) (n,_) = [node | node@(m,_)<-nodes, (n,m) `elem` edges ]
 
 interferG :: Graph (X86Assem, [Temp]) -> Graph Temp
-interferG (Graph nodes _) = trace "interferG" $ UGraph (nub.concat $ [ use instr ++ def instr | instr <- map fst (map snd nodes)]) [(x,y) | (x,y) <- (foldl interf [] nodes), (y,x) `notElem` (foldl interf [] nodes)] where
+interferG (Graph nodes _) = trace "interferG" $ UGraph (nub.concat $ [ use instr ++ def instr | instr <- map fst (map snd nodes)]) (removeDuplicates [(x,y) | (x,y) <- (foldl interf [] nodes)]) where
 	interf :: [(Temp, Temp)] -> (Int, (X86Assem, [Temp])) -> [(Temp, Temp)]
 	interf edges (n, (instr, temps)) = if isMoveBetweenTemps instr == Nothing then nub ([(x,y)| x <- (def instr), y <- temps] ++ edges) else do
 		nub ([(x,y)| x <- (def instr), y <- temps, y /= (snd $ fromJust (isMoveBetweenTemps instr))] ++ edges)
+	removeDuplicates ((x,y):t) = (if x /= y then [(x,y)] else []) ++ removeDuplicates (t\\[(y,x)])
+	removeDuplicates [] = []
 
 makeInterferenceGraph :: Fragment f [X86Assem] -> Graph Temp
 --makeInterferenceGraph (FragmentProc f a) | trace ("makeInerferenceGraph:\n" ++ show a ++ "\n") False = undefined {-%%%-}
