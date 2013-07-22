@@ -64,7 +64,7 @@ colorNode node (interferG@(nodes, edges), properSpills)
 regAlloc :: (MachineSpecifics m X86Assem X86Frame) => Fragment X86Frame [X86Assem] -> m (Fragment X86Frame [X86Assem])
 --regAlloc f | trace ("regAlloc:\n" ++ show f ++ "\n") False = undefined {-%%%-}
 regAlloc fragment@(FragmentProc frame instrs) = do
-	if spills' == [] then return $ FragmentProc frame cleanedAssems else do
+	if spills == [] then return $ FragmentProc frame cleanedAssems else do
 		(frame, assems) <- spill frame instrs spills
 		regAlloc (FragmentProc frame assems) where
 			interferG = makeInterferenceGraph $ fragment
@@ -72,6 +72,5 @@ regAlloc fragment@(FragmentProc frame instrs) = do
 			cleanedAssems = [assem | assem <- regAllocedAssems, (isMoveBetweenTemps assem) == Nothing || 
 				(fst $ fromJust (isMoveBetweenTemps assem)) /= (snd $ fromJust (isMoveBetweenTemps assem))]
 			regAllocedAssems = [foldl (\instr -> \node -> (rename instr (\t -> if t == fst node then fromJust $ snd node else t))) instr coloredNodes | instr <- instrs]
-			spills' = trace ("rA:spills: " ++ show spills) spills {-%%%-}
 
 
