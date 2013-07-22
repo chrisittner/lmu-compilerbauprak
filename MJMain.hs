@@ -54,14 +54,14 @@ main =	do
 --  	return t2
   -- 9. Code emission
   	printAssembly finalFragments
---  	return x86Fragments
+--  	return finalFragments
 
 
 
 
 {-
   putStrLn (show $ map makeInterferenceGraph assemString)
-  putStrLn (show $ map (\assems -> (makeLG (makeCFG (enumV assems) (enumV assems)))) (map f assemString)) where
+  putStrLn (show $ map (\assems -> (makeLG (makeCFG (enumV assems)))) (map f assemString)) where
     f :: Fragment X86Frame [X86Assem] -> [X86Assem]
     f (FragmentProc f a) = a
 -}

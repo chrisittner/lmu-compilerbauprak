@@ -27,7 +27,7 @@ build (UGraph temps edges) = (map f temps, edges) where
 	f t | t `elem` allRegisters' = (t, Just t)
 	    | otherwise = (t, Nothing)
 
-simplify :: ([(Temp, Maybe Temp)], [(Temp, Temp)]) -> State [Temp] ([(Temp, Maybe Temp)], [(Temp, Temp)]) 
+simplify :: ([(Temp, Maybe Temp)], [(Temp, Temp)]) -> State [Temp] ([(Temp, Maybe Temp)], [(Temp, Temp)])
 simplify (nodes, edges) = do
 	if lowDegNodes == [] then do return (nodes, edges) else do
 		stack <- get

@@ -52,6 +52,7 @@ instance Assem X86Assem where
   use (CALL _) = [eax, ecx, edx]
   use _ = []
 
+  def (OPER2 CMP _ _) = []
   def (OPER2 _ (Reg dest) _) = [dest]
   def (OPER2 _ (Mem (Just dest) _ _ _ ) _) = [dest]
   def (OPER1 PUSH _) = []
