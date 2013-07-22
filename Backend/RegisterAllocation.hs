@@ -35,51 +35,40 @@ build (UGraph temps edges) = (map f temps, edges) where
 simplify :: ([(Temp, Maybe Temp)], [(Temp, Temp)]) -> State [Temp] ([(Temp, Maybe Temp)], [(Temp, Temp)]) 
 --simplify (nodes, edges) | trace ("simplify:\n" ++ show nodes ++ "\n") False = undefined {-%%%-}
 simplify (nodes, edges) = do
-  if lowDegNodes == [] then do return (nodes, edges) else do
-    stack <- get
-    put $ stack ++ map fst lowDegNodes
-    simplify ((nodes \\ lowDegNodes), edges) where
-      lowDegNodes = [ x | x <- nodes, deg' (fst x) edges < length generalPurposeRegisters', uncolored x]
+	if lowDegNodes == [] then do return (nodes, edges) else do
+		stack <- get
+		put $ stack ++ map fst lowDegNodes
+		simplify ((nodes \\ lowDegNodes), edges) where
+			lowDegNodes = [ x | x <- nodes, deg' (fst x) edges < length generalPurposeRegisters', uncolored x]
 
 selectSpill :: ([(Temp, Maybe Temp)], [(Temp, Temp)]) -> State [Temp] ([(Temp, Maybe Temp)], [(Temp, Temp)])
 --selectSpill (nodes, edges) | trace ("selectSpill:\n" ++ show nodes ++ "\n") False = undefined {-%%%-}
 selectSpill (nodes, edges) = do
-  if [ x | x <- nodes, uncolored x] == [] then do return (nodes, edges) else do
-    stack <- get
-    put $  (fst highestDegNode) : stack
-    fp <- simplify (highestDegNode `delete` nodes, edges)
-    selectSpill fp where
-      highestDegNode = head [x | x <- nodes, uncolored x, deg' (fst x) edges == maxRemainingDeg] -- never empty due to if clause
-      maxRemainingDeg = maximum [ deg' (fst x) edges | x <- nodes, uncolored x] -- always exists due to if clause
+	if [ x | x <- nodes, uncolored x] == [] then do return (nodes, edges) else do
+		stack <- get
+		put $  (fst highestDegNode) : stack
+		fp <- simplify (highestDegNode `delete` nodes, edges)
+		selectSpill fp where
+			highestDegNode = head [x | x <- nodes, uncolored x, deg' (fst x) edges == maxRemainingDeg] -- never empty due to if clause
+			maxRemainingDeg = maximum [ deg' (fst x) edges | x <- nodes, uncolored x] -- always exists due to if clause
 
 colorNode :: Temp -> (([(Temp, Maybe Temp)], [(Temp, Temp)]), [Temp]) -> (([(Temp, Maybe Temp)], [(Temp, Temp)]), [Temp]) 
 --colorNode node (interferG@(nodes, edges), properSpills) | trace ("colorNode:\n" ++ show node ++ "\n") False = undefined {-%%%-}
 colorNode node (interferG@(nodes, edges), properSpills)
-  | possibleColors == [] = (interferG, node:properSpills) 
-  | otherwise            = ((newNode:nodes,edges), properSpills) where
-    possibleColors = [x | x <- map Just generalPurposeRegisters', x `notElem` neighborColors]
-    neighborColors = [ snd neighbor | neighbor <- nodes, (fst neighbor) `elem` [ x | (x,y) <- edges, y==node]++[ x | (y,x) <- edges, y==node]]
-    newNode = (node, head possibleColors)
+	| possibleColors == [] = (interferG, node:properSpills) 
+	| otherwise            = ((newNode:nodes,edges), properSpills) where
+		possibleColors = [x | x <- map Just generalPurposeRegisters', x `notElem` neighborColors]
+		neighborColors = [ snd neighbor | neighbor <- nodes, (fst neighbor) `elem` [ x | (x,y) <- edges, y==node]++[ x | (y,x) <- edges, y==node]]
+		newNode = (node, head possibleColors)
 
 
 select :: (([(Temp, Maybe Temp)], [(Temp, Temp)]), [Temp]) -> State [Temp] (([(Temp, Maybe Temp)], [(Temp, Temp)]), [Temp])
 --select iGAndSpills@(interferG@(nodes, edges), spills) | trace ("select:\n" ++ show spills ++ "\n") False = undefined {-%%%-}
 select iGAndSpills@(interferG@(nodes, edges), spills) = do
-  stack <- get
-  if stack == [] then do return iGAndSpills else do
-    put $ tail stack
-    select $ colorNode (head stack) iGAndSpills
-
-
-{-
-generateSpillList :: Graph Temp -> [Temp]
---generateSpillList g | trace ("generateSpillList:\n" ++ show g ++ "") False = undefined {-%%%-}
-generateSpillList interferG = snd $ evalState ((simplify (build interferG)) >>= selectSpill >>= \graph -> select (graph, [])) []
-
-coloredNodes :: Graph Temp -> [(Temp, Maybe Temp)]
---coloredNodes g | trace ("coloredNodes:\n" ++ show g ++ "\n\n") False = undefined {-%%%-}
-coloredNodes interferG = fst $ fst $ evalState ((simplify (build interferG)) >>= selectSpill >>= \graph -> select (graph, [])) []
--}
+	stack <- get
+	if stack == [] then do return iGAndSpills else do
+		put $ tail stack
+		select $ colorNode (head stack) iGAndSpills
 
 
 
@@ -94,23 +83,6 @@ regAlloc fragment@(FragmentProc frame instrs) = do
 			cleanedAssems = [assem | assem <- regAllocedAssems, (isMoveBetweenTemps assem) == Nothing || 
 				(fst $ fromJust (isMoveBetweenTemps assem)) /= (snd $ fromJust (isMoveBetweenTemps assem))]
 			regAllocedAssems = [foldl (\instr -> \node -> (rename instr (\t -> if t == fst node then fromJust $ snd node else t))) instr coloredNodes | instr <- instrs]
-			regAllocedAssems'' = trace ("rA:regAllocedAssems: " ++ show regAllocedAssems ++ "\n") regAllocedAssems {-%%%-}
-			spills' = trace ("rA:spills: " ++ show spills) spills {-%%%-}
-
-
--- moves zwischen nicht interferierenden temps eliminieren???
-	-- falls nicht: zumindest moves von einem register auf sich selbst löschen !
--- interference graph falsch? vgl Tr2.java
--- liveness&registerallocation sind UNLESBAR
-
-
-
-
-
-
-
-
-
 
 
 
