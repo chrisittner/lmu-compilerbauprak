@@ -45,7 +45,7 @@ main =	do
   -- 7. Translate to x86 assembly
   	x86Fragments <- mapM codeGen canFragments
   -- 8. Register Allocation
---  	finalFragments <- mapM regAlloc x86Fragments
+  	finalFragments <- mapM regAlloc x86Fragments
 --  	let tm (FragmentProc f a) = FragmentProc f (sseq a)
 --  	t1<- cmmDoc ilFragments
 --  	t2 <- cmmDoc (map tm canFragments)
@@ -53,18 +53,18 @@ main =	do
 --  	let b = D.trace (show t2) False
 --  	return t2
   -- 9. Code emission
---  	printAssembly x86Fragments
-  	return x86Fragments
+  	printAssembly finalFragments
+--  	return x86Fragments
 
 
 
 
-
---  putStrLn (show $ map makeInterferenceGraph assemString)
+{-
+  putStrLn (show $ map makeInterferenceGraph assemString)
   putStrLn (show $ map (\assems -> (makeLG (makeCFG (enumV assems) (enumV assems)))) (map f assemString)) where
     f :: Fragment X86Frame [X86Assem] -> [X86Assem]
     f (FragmentProc f a) = a
+-}
 
-
---  putStrLn assemString
+  putStrLn assemString
 

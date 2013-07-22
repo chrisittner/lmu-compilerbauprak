@@ -56,8 +56,11 @@ instance (Monad m) => MachineSpecifics (X86MachineT m) X86Assem X86Frame where
 
 
 --spill :: f -> [a] -> [Temp] -> m (f, [a])
---  spill f assems temps | trace ("spill:\n" ++ show f ++ "\n" ++ show assems ++ "\n" ++ show temps ++ "\n\n") False = undefined {-%%%-}
-  spill f assems temps = foldM (\ (frame,instrs) temp -> spillOne frame instrs temp) (f,assems) temps
+  spill f assems temps | trace ("spill:\n" ++ show f ++ "\n" ++ show assems ++ "\n" ++ show temps ++ "\n\n") False = undefined {-%%%-}
+  spill f assems temps = do 
+	t <- foldM (\ (frame,instrs) temp -> spillOne frame instrs temp) (f,assems) temps
+	return $ trace ("res::" ++ show t) t 
+	
 
   printAssembly fragments = return $ ".intel_syntax\n.global main\n\n" ++ (concat $ map (\ f -> fraglabel f ++ prolog f ++ functioncode f ++ epilog f ++ "\n") fragments) where
   	fraglabel :: Fragment X86Frame [X86Assem] -> String
@@ -80,7 +83,7 @@ spillOne f assems temp = do
 	(f', newLocal) <- allocLocal f InMemory
 	(newLocal, _) <- runWriterT $ munchExp newLocal -- munchExp schreibt hier nie in die Monade, übersetzt nur die Speicheraddresse
 	newTemp <- nextTemp
-	let assems' = mapM (tempToMemory temp newLocal newTemp) assems
+	let assems' = map (tempToMemory temp newLocal newTemp) assems
 	return (f', concat assems') where 
 		tempToMemory :: Temp -> Operand -> Temp -> X86Assem -> [X86Assem]
 		tempToMemory temp newLocal newTemp instr = loadTemp ++ [newInstr] ++ saveTemp where

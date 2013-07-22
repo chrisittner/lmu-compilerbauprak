@@ -40,8 +40,7 @@ simplify (nodes, edges) = do
     put $ stack ++ map fst lowDegNodes
     simplify ((nodes \\ lowDegNodes), edges) where
       lowDegNodes = [ x | x <- nodes, deg' (fst x) edges < length generalPurposeRegisters', uncolored x]
-	  
-	  
+
 selectSpill :: ([(Temp, Maybe Temp)], [(Temp, Temp)]) -> State [Temp] ([(Temp, Maybe Temp)], [(Temp, Temp)])
 --selectSpill (nodes, edges) | trace ("selectSpill:\n" ++ show nodes ++ "\n") False = undefined {-%%%-}
 selectSpill (nodes, edges) = do
@@ -52,7 +51,6 @@ selectSpill (nodes, edges) = do
     selectSpill fp where
       highestDegNode = head [x | x <- nodes, uncolored x, deg' (fst x) edges == maxRemainingDeg] -- never empty due to if clause
       maxRemainingDeg = maximum [ deg' (fst x) edges | x <- nodes, uncolored x] -- always exists due to if clause
-
 
 colorNode :: Temp -> (([(Temp, Maybe Temp)], [(Temp, Temp)]), [Temp]) -> (([(Temp, Maybe Temp)], [(Temp, Temp)]), [Temp]) 
 --colorNode node (interferG@(nodes, edges), properSpills) | trace ("colorNode:\n" ++ show node ++ "\n") False = undefined {-%%%-}
@@ -73,7 +71,7 @@ select iGAndSpills@(interferG@(nodes, edges), spills) = do
     select $ colorNode (head stack) iGAndSpills
 
 
-
+{-
 generateSpillList :: Graph Temp -> [Temp]
 --generateSpillList g | trace ("generateSpillList:\n" ++ show g ++ "") False = undefined {-%%%-}
 generateSpillList interferG = snd $ evalState ((simplify (build interferG)) >>= selectSpill >>= \graph -> select (graph, [])) []
@@ -81,22 +79,23 @@ generateSpillList interferG = snd $ evalState ((simplify (build interferG)) >>= 
 coloredNodes :: Graph Temp -> [(Temp, Maybe Temp)]
 --coloredNodes g | trace ("coloredNodes:\n" ++ show g ++ "\n\n") False = undefined {-%%%-}
 coloredNodes interferG = fst $ fst $ evalState ((simplify (build interferG)) >>= selectSpill >>= \graph -> select (graph, [])) []
-
+-}
 
 
 
 regAlloc :: (MachineSpecifics m X86Assem X86Frame) => Fragment X86Frame [X86Assem] -> m (Fragment X86Frame [X86Assem])
 --regAlloc f | trace ("regAlloc:\n" ++ show f ++ "\n") False = undefined {-%%%-}
 regAlloc fragment@(FragmentProc frame instrs) = do
-	if spills == [] then return $ FragmentProc frame regAllocedAssems else do
+	if spills' == [] then return $ FragmentProc frame cleanedAssems else do
 		(frame, assems) <- spill frame instrs spills
 		regAlloc (FragmentProc frame assems) where
-			spills = generateSpillList.makeInterferenceGraph $ fragment
-			regAllocedAssems = [assem | assem <- regAllocedAssems', (isMoveBetweenTemps assem) == Nothing || 
+			interferG = makeInterferenceGraph $ fragment
+			((coloredNodes, _), spills) = evalState ((simplify (build interferG)) >>= selectSpill >>= \graph -> select (graph, [])) []
+			cleanedAssems = [assem | assem <- regAllocedAssems, (isMoveBetweenTemps assem) == Nothing || 
 				(fst $ fromJust (isMoveBetweenTemps assem)) /= (snd $ fromJust (isMoveBetweenTemps assem))]
-			regAllocedAssems' = [foldl (\instr -> \node -> (rename instr (\t -> if t == fst node then fromJust $ snd node else t))) instr (coloredNodes.makeInterferenceGraph $ fragment) | instr <- instrs]
-			-- regAllocedAssems' = trace ("rA:regAllocedAssems: " ++ show regAllocedAssems ++ "\n") regAllocedAssems {-%%%-}
-			--  spills' = trace ("rA:spills: " ++ show spills) spills {-%%%-}
+			regAllocedAssems = [foldl (\instr -> \node -> (rename instr (\t -> if t == fst node then fromJust $ snd node else t))) instr coloredNodes | instr <- instrs]
+			regAllocedAssems'' = trace ("rA:regAllocedAssems: " ++ show regAllocedAssems ++ "\n") regAllocedAssems {-%%%-}
+			spills' = trace ("rA:spills: " ++ show spills) spills {-%%%-}
 
 
 -- moves zwischen nicht interferierenden temps eliminieren???
