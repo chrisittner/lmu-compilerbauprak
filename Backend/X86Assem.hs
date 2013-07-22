@@ -48,7 +48,7 @@ instance Assem X86Assem where
   use (OPER1 _ (Reg src)) = [src] -- NEG NOT INC DEC
   use (OPER1 _ (Mem (Just src) _ _ _ )) = [src] -- NEG NOT INC DEC
   use (OPER0 RET) = [eax, esi, edi, ebx, ebp, esp] 
-  use (CALL _) = [eax, ecx, edx]
+  use (CALL _) = []
   use _ = []
 
   def (OPER2 CMP _ _) = []
@@ -62,7 +62,7 @@ instance Assem X86Assem where
   def (OPER1 ENTER _) = []
   def (OPER1 _ (Reg dest)) = [dest]
   def (OPER1 _ (Mem (Just dest) _ _ _ )) = [dest]
-  def (CALL _) = [eax]
+  def (CALL _) = [eax, ecx, edx]
   def _ = []
   
   jumps (JMP lab) = [lab]
