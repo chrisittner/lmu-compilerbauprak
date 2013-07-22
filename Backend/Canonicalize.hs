@@ -82,8 +82,6 @@ canonicalizeStm s = return [s]
 
 
 
-
-
 blockalize :: (MachineSpecifics m a f) => [Stm] -> m ([[Stm]], Maybe Label)
 
 blockalize stms = do
@@ -140,7 +138,7 @@ trace' tracedstms@((JUMP (NAME lab) _):_) blocks = do
 	let suitableBlock = foldl (hasLabel lab) [] blocks
 	if null blocks then return tracedstms
 	else	if length suitableBlock == 1
-			then trace' ((reverse (head suitableBlock)) ++ tracedstms) (blocks \\ suitableBlock) -- ToDo: remove JUMP + following LABEL if possible (= Label not used anywhere else)
+			then trace' ((reverse (head suitableBlock)) ++ tracedstms) (blocks \\ suitableBlock) -- ToMaybe: remove JUMP + following LABEL if possible (= Label not used anywhere else)
 			else trace' ((reverse (head blocks)) ++ tracedstms) (tail blocks)
 
 trace' tracedstms@((CJUMP cmp e1 e2 trueLabel falseLabel):_) blocks = do 
@@ -158,14 +156,4 @@ trace' tracedstms@((CJUMP cmp e1 e2 trueLabel falseLabel):_) blocks = do
 
 hasLabel :: Label -> [[Stm]] -> [Stm] -> [[Stm]]
 hasLabel lab results block = if LABEL lab == head block then block:results else results
-
-
-
-
-
-
-
-
-
-
 

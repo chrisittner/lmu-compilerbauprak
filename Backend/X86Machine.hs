@@ -10,7 +10,6 @@ import Control.Monad.Trans
 import Control.Monad.Trans.Identity
 import Control.Monad.Trans.Writer.Strict
 import Data.List
-import Debug.Trace
 
 data X86Frame = X86Frame { fname :: String, numParams :: Int, temps :: [Temp], numMemoryLocals :: Int } deriving Show
 
@@ -57,7 +56,6 @@ instance (Monad m) => MachineSpecifics (X86MachineT m) X86Assem X86Frame where
 
 
 --spill :: f -> [a] -> [Temp] -> m (f, [a])
-  spill f assems temps | trace ("spill:" ++ show temps) False = undefined {-%%%-}
   spill f assems temps = foldM (\ (frame,instrs) temp -> spillOne frame instrs temp) (f,assems) temps
 
   printAssembly fragments = return $ ".intel_syntax\n.global main\n\n" ++ (concat $ map (\ f -> fraglabel f ++ prolog f ++ functioncode f ++ epilog f ++ "\n") fragments) where
@@ -75,7 +73,6 @@ instance (Monad m) => MachineSpecifics (X86MachineT m) X86Assem X86Frame where
   	showAssems instrs = concat $ map (\ instr -> (show instr ++ "\n")) instrs
 
 
-
 -- Moves single Temp to Memory: Replaces occurrences with a new temp, loads the value from memory before use, saves it to memory after defs
 -- example: "add t4 1" -> ["mov t42 [ebp+12]", "add t42 1", "mov [ebp+12] t42"] (also returns the updated frame)
 spillOne :: (MachineSpecifics m X86Assem f) => f -> [X86Assem] -> Temp -> m (f, [X86Assem])
@@ -90,6 +87,3 @@ spillOne f assems temp = do
 			newInstr = rename instr (\ t -> if t==temp then newTemp else t)
 			loadTemp = if temp `elem` (use instr) then [(OPER2 MOV (Reg newTemp) newLocal)] else []
 			saveTemp = if temp `elem` (def instr) then [(OPER2 MOV newLocal (Reg newTemp))] else []
-
-
-

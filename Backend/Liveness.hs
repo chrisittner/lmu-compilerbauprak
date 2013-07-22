@@ -6,7 +6,6 @@ import Backend.InstructionSelection
 import Backend.Names
 import Data.List
 import qualified Data.Set as Set
-import Debug.Trace
 import Data.Maybe
 
 data Graph a = Graph [(Int,a)] [(Int, Int)] | UGraph [a] [(a, a)] deriving (Show) -- (the Ints guarantee uniqueness, UGraph = graph with unique nodes)

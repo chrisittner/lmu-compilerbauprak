@@ -1,18 +1,13 @@
 {
 module MJLex where
 import MJTokens
-
 }
-
 %wrapper "posn"
-
-
 
 $digit = 0-9
 $alpha = [a-zA-Z]
 
 tokens :-
-
   $white+;
   "//".*;
   "/*".*"*/";
@@ -57,8 +52,5 @@ tokens :-
   "."				{ \ p s  -> Point p }
   $digit+  { \ p s  -> IVal (read s) p }
   $alpha [$alpha $digit \_ \']*  { \ p s  -> Id s p }
-
-
-
 
 {}

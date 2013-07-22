@@ -42,7 +42,6 @@ instance Translate F.ClassDeclaration where
 
 
 
-
 translateMethod :: (Frame f, MachineSpecifics m a f) => (SymbolTree, SymbolTree, SymbolTree) -> F.MethodDeclaration -> m (Fragment f Stm)
 translateMethod s@(_, (Class classname classvars _), (Method name _ pars vars)) (F.MethodDeclaration _ _ _ _ stm returnexp) = do
 	f <- mkFrame (classname ++ "$" ++ name) ((length pars)+1)
@@ -58,7 +57,6 @@ translateMethod s@(_, (Class classname classvars _), (Method name _ pars vars)) 
 
 
 
-
 translateStm :: (Frame f, MachineSpecifics m a f) => (SymbolTree, SymbolTree, SymbolTree) -> ([(String, Exp)]) -> F.Stm  -> m Stm
 translateStm s addrlist (F.StmList stmlist) = do 
 	stmlist <- mapM (translateStm s addrlist) stmlist
@@ -71,7 +69,7 @@ translateStm s addrlist (F.IfStm condition stm1 stm2) = do
 	condition <- translateExp s addrlist condition
 	stm1 <- translateStm s addrlist stm1
 	stm2 <- translateStm s addrlist stm2
-	return $ sseq [ CJUMP {rel=EQ, leftE=condition, rightE=CONST 1, trueLab=ltrue, falseLab=lfalse}, -- optimieren!
+	return $ sseq [ CJUMP {rel=EQ, leftE=condition, rightE=CONST 1, trueLab=ltrue, falseLab=lfalse}, -- ToMaybe: optimieren!
 		LABEL ltrue,
 		stm1,
 		jump lexit,
@@ -119,8 +117,6 @@ translateStm s addrlist (F.ArrayAssignStm arrayname indexexp exp) = do
 		LABEL lfalse,
 		EXP $ CALL {func=NAME "L_raise", args = [(CONST 23)] }, 
 		LABEL lexit ]
-
-
 
 
 

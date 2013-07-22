@@ -9,7 +9,6 @@ import Data.List
 import Control.Monad.Trans.State
 import Backend.Names
 import Data.Maybe
-import Debug.Trace
 
 allRegisters' = [eax, ebx, ecx, edx, esi, edi, esp, ebp]
 generalPurposeRegisters' =[eax, ebx, ecx, edx, esi, edi]

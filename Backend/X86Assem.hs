@@ -2,7 +2,6 @@ module Backend.X86Assem where
 import Backend.Names
 import Backend.MachineSpecifics
 import Text.Printf
-import Debug.Trace
 
 eax = mkNamedTemp "%eax"
 ebx = mkNamedTemp "%ebx"

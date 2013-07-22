@@ -9,7 +9,6 @@ import Control.Monad.Trans.Writer.Strict
 import Control.Monad
 import Control.Monad.Trans.Identity
 import Control.Monad.Trans
-import Debug.Trace
 
 munchExp :: (MachineSpecifics m a f)=> B.Exp -> WriterT [X86Assem] m Operand
 
@@ -56,14 +55,12 @@ munchExp (B.MEM exp) = do
 
 
 
-
 munchStm :: (MachineSpecifics m a f)=> B.Stm -> WriterT [X86Assem] m ()
 
 munchStm (B.SEQ stm1 stm2) = munchStm stm1 >> munchStm stm2
 
 munchStm (B.EXP (B.CALL (B.NAME lab) args)) = do
 	args <- mapM munchExp args
---	args <- mapM bufferMem args
 	tell $ map (OPER1 PUSH) (reverse args) -- push args in reversed order
 	tell [CALL lab]
 	tell [OPER2 ADD (Reg esp) (Imm (4*(length args)))] -- reset stack pointer
@@ -71,7 +68,6 @@ munchStm (B.EXP (B.CALL (B.NAME lab) args)) = do
 munchStm (B.MOVE dest (B.CALL (B.NAME lab) args)) = do
 	dest <- munchExp dest
 	args <- mapM munchExp args
---	args <- mapM bufferMem args
 	tell $ map (OPER1 PUSH) (reverse args) -- push args in reversed order
 	tell [CALL lab]
 	tell [OPER2 ADD (Reg esp) (Imm (4*(length args)))] -- reset stack pointer
@@ -115,8 +111,6 @@ munchStm (B.NOP) = tell [OPER0 NOP]
 
 
 
-
-
 -- helpers
 
 -- if both paramters are Mems, buffer the second one into a (Reg tmp), o/w return second
@@ -135,11 +129,3 @@ bufferIfImm i@(Imm _)= do
 	return $ Reg t
 bufferIfImm i = return i
 
-
--- replaces a Mem by (Reg tmp), tmp containing the calculated memory address (usig LEA)
-bufferMem :: (MachineSpecifics m a f) => Operand ->  WriterT [X86Assem] m Operand
-bufferMem m@(Mem _ _ _ _) = do
-	t <- nextTemp
-	tell [OPER2 LEA (Reg t) m]
-	return $ Reg t
-bufferMem op = return op
