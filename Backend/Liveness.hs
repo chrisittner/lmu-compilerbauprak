@@ -1,6 +1,5 @@
 {-# LANGUAGE EmptyDataDecls,MultiParamTypeClasses, GeneralizedNewtypeDeriving, ScopedTypeVariables,FlexibleContexts,FlexibleInstances   #-}
 module Backend.Liveness where
-
 import Backend.MachineSpecifics
 import Backend.X86Assem
 import Backend.InstructionSelection

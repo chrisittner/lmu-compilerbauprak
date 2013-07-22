@@ -1,6 +1,5 @@
 {-# LANGUAGE FlexibleContexts #-}
 module Backend.RegisterAllocation where 
-
 import Backend.MachineSpecifics
 import Backend.X86Assem
 import Backend.X86Machine
@@ -83,6 +82,11 @@ regAlloc fragment@(FragmentProc frame instrs) = do
 			cleanedAssems = [assem | assem <- regAllocedAssems, (isMoveBetweenTemps assem) == Nothing || 
 				(fst $ fromJust (isMoveBetweenTemps assem)) /= (snd $ fromJust (isMoveBetweenTemps assem))]
 			regAllocedAssems = [foldl (\instr -> \node -> (rename instr (\t -> if t == fst node then fromJust $ snd node else t))) instr coloredNodes | instr <- instrs]
+--			regAllocedAssems'' = trace ("rA:regAllocedAssems: " ++ show regAllocedAssems ++ "\n") regAllocedAssems {-%%%-}
+			spills' = trace ("rA:spills: " ++ show spills) spills {-%%%-}
+
+
+
 
 
 
