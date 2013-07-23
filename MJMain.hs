@@ -20,7 +20,6 @@ import Control.Monad.Identity
 import System.IO
 import System.Environment
 import System.Exit
-import qualified Debug.Trace as D
 
 main =	do
   args <- getArgs
@@ -34,6 +33,7 @@ main =	do
   let symbolTable = symbolize abstractSyntaxTree
   -- 4. Run type checker:
   let t = typecheck' abstractSyntaxTree symbolTable
+  if not t then exitFailure else return ()
 
   let assemString = runIdentity . withX86Machine $ do
   -- 5. Translate program to intermediate language fragments:
@@ -46,15 +46,7 @@ main =	do
   	finalFragments <- mapM regAlloc x86Fragments
   -- 9. Code emission
   	printAssembly finalFragments
---  	return finalFragments
 
   putStrLn assemString
 
 
-
-{-
-  putStrLn (show $ map makeInterferenceGraph assemString)
-  putStrLn (show $ map (\assems -> (makeLG (makeCFG (enumV assems)))) (map f assemString)) where
-    f :: Fragment X86Frame [X86Assem] -> [X86Assem]
-    f (FragmentProc f a) = a
--}

@@ -14,63 +14,59 @@ import Data.List
 data X86Frame = X86Frame { fname :: String, numParams :: Int, temps :: [Temp], numMemoryLocals :: Int } deriving Show
 
 instance Frame X86Frame where
-  name f = fname f
-  params f = [ MEM (BINOP PLUS (TEMP ebp) (CONST (8 + 4*n))) | n <- [0..((numParams f)-1)] ] -- Params liegen bei x86 an (%ebp+8)+n*4
-  size f = (numMemoryLocals f) * 4
-  allocLocal f Anywhere = do 
-        t <- nextTemp 
-        return (X86Frame (fname f) (numParams f) (t:(temps f)) (numMemoryLocals f),
-                TEMP t)
-  allocLocal f InMemory = return (X86Frame (fname f) (numParams f) (temps f) ((numMemoryLocals f)+1),
-                MEM (BINOP MINUS (TEMP ebp) (CONST $ 4 * (1 + numMemoryLocals f))) )
-  makeProc f body returnExp = return $ SEQ body $ MOVE (TEMP eax) returnExp
+	name f = if fname f == "main" then "Lmain" else fname f
+	params f = [ MEM (BINOP PLUS (TEMP ebp) (CONST (8 + 4*n))) | n <- [0..((numParams f)-1)] ] -- Params liegen an (%ebp+8)+n*4
+	size f = (numMemoryLocals f) * 4
+	allocLocal f Anywhere = do 
+		t <- nextTemp 
+		return (X86Frame (fname f) (numParams f) (t:(temps f)) (numMemoryLocals f), TEMP t)
+	allocLocal f InMemory = return (X86Frame (fname f) (numParams f) (temps f) ((numMemoryLocals f)+1), MEM (BINOP MINUS (TEMP ebp) (CONST $ 4 * (1 + numMemoryLocals f))) )
+	makeProc f body returnExp = return $ SEQ body $ MOVE (TEMP eax) returnExp
 
 
 
-newtype X86MachineT m a = X86MachineT { runX86MachineT :: NameGenT m a }
-   deriving (Monad, MonadNameGen, MonadTrans)
+newtype X86MachineT m a = X86MachineT { runX86MachineT :: NameGenT m a } deriving (Monad, MonadNameGen, MonadTrans)
 
 withX86Machine :: Monad m => X86MachineT m a -> m a
 withX86Machine = runNameGenT . runX86MachineT
 
 instance (Monad m) => MachineSpecifics (X86MachineT m) X86Assem X86Frame where
-  wordSize = return 4
-  mkFrame name nparams = return $ X86Frame name nparams [] 0
-  allRegisters = return [eax, ebx, ecx, edx, esi, edi, esp, ebp]
-  generalPurposeRegisters = return [eax, ebx, ecx, edx, esi, edi]
+	wordSize = return 4
+	mkFrame name nparams = return $ X86Frame name nparams [] 0
+	allRegisters = return [eax, ebx, ecx, edx, esi, edi, esp, ebp]
+	generalPurposeRegisters = return [eax, ebx, ecx, edx, esi, edi]
 
-  codeGen (FragmentProc f b) = do 
-  	assemlist <- execWriterT $ munchStm (sseq b)
-  	bufferTemps <- replicateM 3 nextTemp
-  	let bufferCalleeSaves = [ OPER2 MOV (Reg $ bufferTemps!!0) (Reg ebx),
-  		OPER2 MOV (Reg $ bufferTemps!!1) (Reg edi),
-  		OPER2 MOV (Reg $ bufferTemps!!2) (Reg esi) ]
-  	let restoreCalleeSaves = [ OPER2 MOV (Reg ebx) (Reg $ bufferTemps!!0),
-  		OPER2 MOV (Reg edi) (Reg $ bufferTemps!!1),
-  		OPER2 MOV (Reg esi) (Reg $ bufferTemps!!2), 
---  		OPER2 MOV (Reg esp) (Reg ebp),
---  		OPER1 POP (Reg ebp),
-  		OPER0 LEAVE,
-  		OPER0 RET ]
-  	return $ FragmentProc f (bufferCalleeSaves ++ assemlist ++ restoreCalleeSaves) 
-
+	codeGen (FragmentProc f b) = do 
+		assemlist <- execWriterT $ munchStm (sseq b)
+		bufferTemps <- replicateM 3 nextTemp
+		let bufferCalleeSaves = [ OPER2 MOV (Reg $ bufferTemps!!0) (Reg ebx),
+			OPER2 MOV (Reg $ bufferTemps!!1) (Reg edi),
+			OPER2 MOV (Reg $ bufferTemps!!2) (Reg esi) ]
+		let restoreCalleeSaves = [ OPER2 MOV (Reg ebx) (Reg $ bufferTemps!!0),
+			OPER2 MOV (Reg edi) (Reg $ bufferTemps!!1),
+			OPER2 MOV (Reg esi) (Reg $ bufferTemps!!2), 
+--			OPER2 MOV (Reg esp) (Reg ebp),
+--			OPER1 POP (Reg ebp),
+			OPER0 LEAVE,
+			OPER0 RET ]
+		return $ FragmentProc f (bufferCalleeSaves ++ assemlist ++ restoreCalleeSaves) 
 
 --spill :: f -> [a] -> [Temp] -> m (f, [a])
-  spill f assems temps = foldM (\ (frame,instrs) temp -> spillOne frame instrs temp) (f,assems) temps
+	spill f assems temps = foldM (\ (frame,instrs) temp -> spillOne frame instrs temp) (f,assems) temps
 
-  printAssembly fragments = return $ ".intel_syntax\n.global main\n\n" ++ (concat $ map (\ f -> fraglabel f ++ prolog f ++ functioncode f ++ epilog f ++ "\n") fragments) where
-  	fraglabel :: Fragment X86Frame [X86Assem] -> String
-  	fraglabel (FragmentProc f _) = name f ++ ":\n"
-  	prolog :: Fragment X86Frame [X86Assem] -> String
-  	prolog (FragmentProc frame instrs) = showAssems [ 
---  		OPER1 PUSH (Reg ebp), OPER2 MOV (Reg ebp) (Reg esp), OPER2 SUB (Reg esp) (Imm (size frame)) ]
-  		OPER1 ENTER (Imm (size frame))]
-  	functioncode :: Fragment X86Frame [X86Assem] -> String
-  	functioncode (FragmentProc _ instrs) = showAssems instrs
-  	epilog :: Fragment X86Frame [X86Assem] -> String
-  	epilog (FragmentProc frame instrs) = showAssems [ ] -- bereits in codeGen angehängt (um die calleeSaves zu retten)
-  	showAssems :: [X86Assem] -> String
-  	showAssems instrs = concat $ map (\ instr -> (show instr ++ "\n")) instrs
+	printAssembly fragments = return $ ".intel_syntax\n.global Lmain\n\n" ++ (concat $ map (\ f -> fraglabel f ++ prolog f ++ functioncode f ++ epilog f ++ "\n") fragments) where
+		fraglabel :: Fragment X86Frame [X86Assem] -> String
+		fraglabel (FragmentProc f _) = name f ++ ":\n"
+		prolog :: Fragment X86Frame [X86Assem] -> String
+		prolog (FragmentProc frame instrs) = showAssems [
+--			OPER1 PUSH (Reg ebp), OPER2 MOV (Reg ebp) (Reg esp), OPER2 SUB (Reg esp) (Imm (size frame)) ]
+			OPER1 ENTER (Imm (size frame))]
+		functioncode :: Fragment X86Frame [X86Assem] -> String
+		functioncode (FragmentProc _ instrs) = showAssems instrs
+		epilog :: Fragment X86Frame [X86Assem] -> String
+		epilog (FragmentProc frame instrs) = showAssems [ ] -- bereits in codeGen angehängt (um die calleeSaves zu retten)
+		showAssems :: [X86Assem] -> String
+		showAssems instrs = concat $ map (\ instr -> (show instr ++ "\n")) instrs
 
 
 -- Moves single Temp to Memory: Replaces occurrences with a new temp, loads the value from memory before use, saves it to memory after defs

@@ -26,81 +26,78 @@ data X86Assem =
 	| LABEL Label deriving (Ord, Eq)
 
 instance Assem X86Assem where
-  use (OPER2 MOV (Mem (Just src) _ _ _ ) (Reg src')) = [src, src']
-  use (OPER2 MOV _ (Reg src)) = [src]
-  use (OPER2 MOV _ (Mem (Just src) _ _ _ )) = [src]
-  use (OPER2 MOV (Mem (Just src) _ _ _ ) _) = [src]
-  use (OPER2 LEA _ (Reg src)) = [src]
-  use (OPER2 LEA _ (Mem (Just src) _ _ _ )) = [src]
-  use (OPER2 _ (Reg dest) (Reg src)) = [dest, src]
-  use (OPER2 _ (Reg dest) (Mem (Just src) _ _ _ )) = [dest, src]
-  use (OPER2 _ (Mem (Just dest) _ _ _ ) (Reg src)) = [dest, src]
-  use (OPER2 _ (Mem (Just dest) _ _ _ ) (Mem (Just src) _ _ _ )) = [dest, src]
-  use (OPER1 PUSH (Reg src)) = [src] 
-  use (OPER1 PUSH (Mem (Just src) _ _ _ )) = [src] 
-  use (OPER1 POP _) = []
-  use (OPER1 IMUL (Reg src)) = [src, eax]
-  use (OPER1 IMUL (Mem (Just src) _ _ _ )) = [src, eax]
-  use (OPER1 IDIV (Reg src)) = [src, eax]
-  use (OPER1 IDIV (Mem (Just src) _ _ _ )) = [src, eax]
-  use (OPER1 ENTER (Reg src)) = [src]
-  use (OPER1 ENTER (Mem (Just src) _ _ _ )) = [src]
-  use (OPER1 _ (Reg src)) = [src] -- NEG NOT INC DEC
-  use (OPER1 _ (Mem (Just src) _ _ _ )) = [src] -- NEG NOT INC DEC
-  use (OPER0 RET) = [eax, esi, edi, ebx, ebp, esp] 
-  use (CALL _) = []
-  use _ = []
+	use (OPER2 MOV (Mem (Just src) _ _ _ ) src') = src : getTemps src'
+	use (OPER2 MOV _ src) = getTemps src
+	use (OPER2 LEA _ src) = getTemps src
+	use (OPER2 _ dest src) = getTemps dest ++ getTemps src
+	use (OPER1 PUSH src) = getTemps src
+	use (OPER1 POP _) = []
+	use (OPER1 IMUL src) = eax : getTemps src
+	use (OPER1 IDIV src) = eax : getTemps src
+	use (OPER1 ENTER src) = getTemps src
+	use (OPER1 _ src) = getTemps src -- NEG NOT INC DEC
+	use (OPER0 RET) = [esi, edi, ebx, ebp, eax]
+	use _ = []
 
-  def (OPER2 CMP _ _) = []
-  def (OPER2 _ (Reg dest) _) = [dest]
-  def (OPER2 _ (Mem (Just dest) _ _ _ ) _) = [dest]
-  def (OPER1 PUSH _) = []
-  def (OPER1 POP (Reg dest)) = [dest]
-  def (OPER1 POP (Mem (Just dest) _ _ _ )) = [dest]
-  def (OPER1 IMUL _) = [eax]
-  def (OPER1 IDIV _) = [eax, edx]
-  def (OPER1 ENTER _) = []
-  def (OPER1 _ (Reg dest)) = [dest]
-  def (OPER1 _ (Mem (Just dest) _ _ _ )) = [dest]
-  def (CALL _) = [eax, ecx, edx]
-  def _ = []
-  
-  jumps (JMP lab) = [lab]
-  jumps (J _ lab) = [lab]
-  jumps _ = []
+	def (OPER2 CMP _ _) = []
+	def (OPER2 _ dest _) = getTemps dest
+	def (OPER1 PUSH _) = []
+	def (OPER1 POP dest) = getTemps dest
+	def (OPER1 IMUL _) = [eax]
+	def (OPER1 IDIV _) = [eax, edx]
+	def (OPER1 ENTER _) = []
+	def (OPER1 _ dest) = getTemps dest
+	def (CALL _) = [eax, ecx, edx]
+	def _ = []
 
-  isFallThrough (JMP _) = False
-  isFallThrough _ = True
+	jumps (JMP lab) = [lab]
+	jumps (J _ lab) = [lab]
+	jumps _ = []
 
-  isMoveBetweenTemps (OPER2 MOV (Reg dest) (Reg src)) = Just (dest,src)
-  isMoveBetweenTemps _ = Nothing
+	isFallThrough (JMP _) = False
+	isFallThrough _ = True
 
-  isLabel (LABEL l) = Just l
-  isLabel _ = Nothing
+	isMoveBetweenTemps (OPER2 MOV (Reg dest) (Reg src)) = Just (dest,src)
+	isMoveBetweenTemps _ = Nothing
 
-  rename (OPER2 o (Reg t1) (Reg t2)) f = OPER2 o (Reg (f t1)) (Reg (f t2))
-  rename (OPER2 o (Reg t1) (Mem (Just t2) scale index offset)) f = OPER2 o (Reg (f t1)) (Mem (Just (f t2)) scale index offset)
-  rename (OPER2 o (Mem (Just t1) scale index offset) (Reg t2)) f = OPER2 o (Mem (Just (f t1)) scale index offset) (Reg (f t2))
-  rename (OPER2 o (Mem (Just t1) scale1 index1 offset1) (Mem (Just t2) scale2 index2 offset2)) f = OPER2 o (Mem (Just (f t1)) scale1 index1 offset1) (Mem (Just (f t2)) scale2 index2 offset2)
-  rename (OPER2 o (Reg t1) op2) f = OPER2 o (Reg (f t1))  op2
-  rename (OPER2 o (Mem (Just t1) scale index offset) op2) f = OPER2 o (Mem (Just (f t1)) scale index offset) op2
-  rename (OPER2 o op1 (Reg t2)) f = OPER2 o op1 (Reg (f t2))
-  rename (OPER2 o op1 (Mem (Just t1) scale index offset)) f = OPER2 o op1 (Mem (Just (f t1)) scale index offset)
-  rename (OPER1 o (Reg t)) f = OPER1 o (Reg (f t))
-  rename (OPER1 o (Mem (Just t) scale index offset )) f = OPER1 o (Mem (Just (f t)) scale index offset )
-  rename i _ = i
+	isLabel (LABEL l) = Just l
+	isLabel _ = Nothing
+
+	rename (OPER2 o t t') f = OPER2 o (renameTempInOper t f) (renameTempInOper t' f)
+	rename (OPER1 o t) f = OPER1 o (renameTempInOper t f)
+	rename i _ = i
 
 instance Show Operand where
-  show (Imm int) = show int
-  show (Reg temp) = show temp
-  show (Mem (Just base) scale Nothing (Just n)) = "DWORD PTR [" ++ (show base) ++ (printf "%+d" n) ++ "]" -- (2tes reg nicht verwendet)
-  show (Mem (Just base) scale Nothing Nothing) = "DWORD PTR ["++ (show base) ++ "]"
+	show (Imm int) = show int
+	show (Reg temp) = show temp
+	show (Mem (Just base) scale Nothing (Just n)) = "DWORD PTR [" ++ (show base) ++ (printf "%+d" n) ++ "]" -- (2tes reg nicht verwendet)
+	show (Mem (Just base) scale Nothing Nothing) = "DWORD PTR ["++ (show base) ++ "]"
 instance Show X86Assem where
-  show (OPER2 op arg1 arg2) = "\t" ++ (show op) ++ " " ++ (show arg1) ++ ", " ++ (show arg2)
-  show (OPER1 ENTER arg) = "\t" ++ (show ENTER) ++ " " ++ (show arg) ++ ", 0"
-  show (OPER1 op arg) = "\t" ++ (show op) ++ " " ++ (show arg)
-  show (OPER0 op) = "\t" ++ (show op)
-  show (CALL lab) = "\t" ++ "CALL " ++ lab
-  show (J cmp lab) = "\t" ++ "J" ++ (show cmp) ++ " " ++ lab
-  show (JMP lab) = "\t" ++ "JMP " ++ lab
-  show (LABEL lab) = lab ++ ":"
+	show (OPER2 op arg1 arg2) = "\t" ++ (show op) ++ " " ++ (show arg1) ++ ", " ++ (show arg2)
+	show (OPER1 ENTER arg) = "\t" ++ (show ENTER) ++ " " ++ (show arg) ++ ", 0"
+	show (OPER1 op arg) = "\t" ++ (show op) ++ " " ++ (show arg)
+	show (OPER0 op) = "\t" ++ (show op)
+	show (CALL lab) = "\t" ++ "CALL " ++ lab
+	show (J cmp lab) = "\t" ++ "J" ++ (show cmp) ++ " " ++ lab
+	show (JMP lab) = "\t" ++ "JMP " ++ lab
+	show (LABEL lab) = lab ++ ":"
+
+
+
+-- helpers
+
+getTemps :: Operand -> [Temp]
+getTemps (Reg t) = [t]
+getTemps (Mem (Just t) _ (Just t') _) = [t, t']
+getTemps (Mem (Just t) _ _ _) = [t]
+getTemps (Mem _ _ (Just t) _) = [t]
+getTemps _ = []
+
+renameTempInOper :: Operand -> (Temp -> Temp) -> Operand
+renameTempInOper (Reg t) f = Reg $ f t
+renameTempInOper (Mem (Just t) scale (Just t') offset) f = Mem (Just $ f t) scale (Just $ f t') offset
+renameTempInOper (Mem (Just t) scale index offset) f = Mem (Just $ f t) scale index offset
+renameTempInOper (Mem base scale (Just t) offset) f = Mem base scale (Just $ f t) offset
+renameTempInOper o _ = o
+
+

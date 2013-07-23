@@ -13,12 +13,6 @@ import Data.Maybe
 allRegisters' = [eax, ebx, ecx, edx, esi, edi, esp, ebp]
 generalPurposeRegisters' =[eax, ebx, ecx, edx, esi, edi]
 
-deg' :: Temp -> [(Temp,Temp)] -> Int
-deg' node edges = length.nub $ [ x | (x,y) <- edges, y==node]++[ x | (y,x) <- edges, y==node]
-
-uncolored :: (Temp, Maybe Temp) -> Bool
-uncolored (t, Nothing) = True
-uncolored _ = False
 
 build :: Graph Temp ->  ([(Temp, Maybe Temp)], [(Temp, Temp)])
 build (UGraph temps edges) = (map f temps, edges) where
@@ -32,7 +26,7 @@ simplify (nodes, edges) = do
 		stack <- get
 		put $ (map fst lowDegNodes) ++ stack
 		simplify ((nodes \\ lowDegNodes), edges) where
-			lowDegNodes = [ x | x <- nodes, deg' (fst x) edges < length generalPurposeRegisters', uncolored x]
+			lowDegNodes = [ x | x <- nodes, deg' (fst x) edges nodes < length generalPurposeRegisters', uncolored x]
 
 selectSpill :: ([(Temp, Maybe Temp)], [(Temp, Temp)]) -> State [Temp] ([(Temp, Maybe Temp)], [(Temp, Temp)])
 selectSpill (nodes, edges) = do
@@ -41,8 +35,8 @@ selectSpill (nodes, edges) = do
 		put $ (fst highestDegNode):stack
 		fp <- simplify (highestDegNode `delete` nodes, edges)
 		selectSpill fp where
-			highestDegNode = head [x | x <- nodes, uncolored x, deg' (fst x) edges == maxRemainingDeg] -- never empty due to if clause
-			maxRemainingDeg = maximum [ deg' (fst x) edges | x <- nodes, uncolored x] -- always exists due to if clause
+			highestDegNode = head [x | x <- nodes, uncolored x, deg' (fst x) edges nodes == maxRemainingDeg] -- never empty due to if clause
+			maxRemainingDeg = maximum [ deg' (fst x) edges nodes | x <- nodes, uncolored x] -- always exists due to if clause
 
 select :: (([(Temp, Maybe Temp)], [(Temp, Temp)]), [Temp]) -> State [Temp] (([(Temp, Maybe Temp)], [(Temp, Temp)]), [Temp])
 select iGAndSpills@(interferG@(nodes, edges), spills) = do
@@ -69,4 +63,15 @@ regAlloc fragment@(FragmentProc frame instrs) = do
 			cleanedAssems = [assem | assem <- regAllocedAssems, (isMoveBetweenTemps assem) == Nothing || 
 				(fst $ fromJust (isMoveBetweenTemps assem)) /= (snd $ fromJust (isMoveBetweenTemps assem))]
 			regAllocedAssems = [foldl (\instr -> \node -> (rename instr (\t -> if t == fst node then fromJust $ snd node else t))) instr coloredNodes | instr <- instrs]
+
+
+-- helpers
+
+deg' :: Temp -> [(Temp,Temp)] -> [(Temp, Maybe Temp)] -> Int
+deg' node edges currentNodes = length $ neighbors -- `intersect` map fst currentNodes
+	where neighbors = nub $ [ x | (x,y) <- edges, y==node]++[ x | (y,x) <- edges, y==node]
+
+uncolored :: (Temp, Maybe Temp) -> Bool
+uncolored (t, Nothing) = True
+uncolored _ = False
 
