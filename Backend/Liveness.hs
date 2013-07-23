@@ -24,11 +24,11 @@ makeLG (Graph nodes) = dropIns $ makeLG' (Graph nodesEmptyInOut) where
 	nodesEmptyInOut = map (\ (instr, n , adj) -> ((instr, S.empty, S.empty), n, adj)) nodes
 makeLG' :: Graph (X86Assem, S.Set Temp, S.Set Temp) -> Graph (X86Assem, S.Set Temp, S.Set Temp)
 makeLG' lg@(Graph nodes) = if lg == newLg then lg else makeLG' newLg where
-	newLg = foldr update (Graph []) nodes
-	update :: ((X86Assem, S.Set Temp, S.Set Temp), Int, S.Set Int) -> Graph (X86Assem, S.Set Temp, S.Set Temp) -> Graph (X86Assem, S.Set Temp, S.Set Temp)
-	update ((instr, ins, outs), n, adj) (Graph nodes) = Graph $ ((instr, ins', outs'), n, adj):nodes where
+	newLg = foldr (update lg) (Graph []) nodes
+	update :: Graph (X86Assem, S.Set Temp, S.Set Temp) -> ((X86Assem, S.Set Temp, S.Set Temp), Int, S.Set Int) -> Graph (X86Assem, S.Set Temp, S.Set Temp) -> Graph (X86Assem, S.Set Temp, S.Set Temp)
+	update (Graph allNodes) ((instr, ins, outs), n, adj) (Graph nodes) = Graph $ ((instr, ins', outs'), n, adj):nodes where
 		ins'  = (S.fromList . use $ instr) `S.union` (outs S.\\ (S.fromList . def $ instr))
-		outs' = S.unions . S.toList $ S.map (\n -> S.unions [ins | ((_,ins,_), m,_)<-nodes, n==m] ) adj  -- the in-sets of all successors
+		outs' = S.unions . S.toList $ S.map (\n -> S.unions [ins | ((_,ins,_), m,_)<-allNodes, n==m] ) adj  -- the in-sets of all successors
 
 
 interferG :: Graph (X86Assem, S.Set Temp) -> Graph Temp
@@ -45,5 +45,4 @@ makeInterferenceGraph (FragmentProc _ assems) = interferG.makeLG.makeCFG $ assem
 
 
 -- helpers
-fst3 :: (a, b, c) -> a
 fst3 (x,_,_) = x
