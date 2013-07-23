@@ -128,4 +128,3 @@ bufferIfImm i@(Imm _)= do
 	tell [OPER2 MOV (Reg t) i]
 	return $ Reg t
 bufferIfImm i = return i
-

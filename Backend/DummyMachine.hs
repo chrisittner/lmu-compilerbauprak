@@ -54,3 +54,4 @@ instance (Monad m) => MachineSpecifics (DummyMachineT m) DummyAssem DummyFrame w
   -- Der Typ Assem is leer, also sind folgende Definitionen sinnvoll:
   spill frame body temps = return (frame, [])
   printAssembly frags = return ""
+

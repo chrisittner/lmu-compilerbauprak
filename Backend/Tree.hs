@@ -178,6 +178,3 @@ and (CONST 0) e = CONST 0
 and e (CONST 0) = CONST 0
 and (CONST 1) (CONST 1) = CONST 1 
 and e e' = BINOP AND e e'
-
-
-

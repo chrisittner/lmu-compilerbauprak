@@ -15,7 +15,6 @@ import Control.Monad.Identity
 import Control.Monad.Trans.Reader (ReaderT)
 import Control.Monad.Trans.Writer.Strict
 import Text.PrettyPrint
---import Util
 
 data Temp = NamedTemp String | Temp Int 
    deriving (Eq, Ord)
@@ -24,9 +23,6 @@ instance Show Temp where
     show (Temp i) = "t" ++ show i
     show (NamedTemp s) = s
 
---instance Pretty Temp where
---   ppr t = text (show t)
-
 -- May lead to name clashes with 'nextTemp'
 -- User must take care to avoid clashes.
 mkNamedTemp :: String -> Temp
@@ -34,8 +30,6 @@ mkNamedTemp s = NamedTemp s
 
 type Label = String
 
---instance Pretty Label where
---   ppr l = text l
 
 mkLabel :: String -> Label
 mkLabel l | ('$' `elem` l) = 

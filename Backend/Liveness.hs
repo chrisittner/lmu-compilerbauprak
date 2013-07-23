@@ -17,7 +17,6 @@ makeCFG instrs = Graph $ map (mkNodes instrs') instrs' where
 		fallThroughEdges = if isFallThrough instr && n < length instrs then [n+1] else []
 		jumpEdges = [m | (m,y) <- instrs', y `elem` (map LABEL (jumps instr))]
 
-
 makeLG :: Graph X86Assem -> Graph (X86Assem, S.Set Temp) -- determine the in- and out-sets for each node (slide 251) (first set is ins, second is outs)
 makeLG (Graph nodes) = dropIns $ makeLG' (Graph nodesEmptyInOut) where
 	dropIns (Graph nodes) = Graph (map (\ ((instr, ins, outs), n, adj) -> ((instr, outs), n, adj)) nodes)
@@ -29,7 +28,6 @@ makeLG' lg@(Graph nodes) = if lg == newLg then lg else makeLG' newLg where
 	update (Graph allNodes) ((instr, ins, outs), n, adj) (Graph nodes) = Graph $ ((instr, ins', outs'), n, adj):nodes where
 		ins'  = (S.fromList . use $ instr) `S.union` (outs S.\\ (S.fromList . def $ instr))
 		outs' = S.unions . S.toList $ S.map (\n -> S.unions [ins | ((_,ins,_), m,_)<-allNodes, n==m] ) adj  -- the in-sets of all successors
-
 
 interferG :: Graph (X86Assem, S.Set Temp) -> Graph Temp
 --interferG g | trace ("interferG: "++show g ++ "\n\n\n\n") False = undefined

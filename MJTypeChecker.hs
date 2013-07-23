@@ -112,9 +112,7 @@ typeof (InvokeExp objname methodname args) s@((Program classlist), (Class _ clas
 		      methodargtypes = [Just typ | (Var _ typ)<-methodargs]
 typeof _ _ = Nothing
 
+-- helpers
 isobj (Just (ClassType _)) = True
 isobj _ = False
 getclass (Just (ClassType c)) = c
-
-
-

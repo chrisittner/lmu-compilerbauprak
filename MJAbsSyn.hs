@@ -1,11 +1,9 @@
 module MJAbsSyn where
 
 data Type = IntType | BoolType | IntArrayType | ClassType String | StringArrayType | VoidType deriving (Show, Eq, Ord)
-
 type Identifier = String
 
 data Prg = Prg MainClass [ClassDeclaration] deriving (Show, Eq, Ord)
-
 data MainClass = MainClass Identifier Identifier Stm deriving (Show, Eq, Ord)
 data ClassDeclaration = ClassDeclaration Identifier Identifier [VarDeclaration] [MethodDeclaration] deriving (Show, Eq, Ord)
 data VarDeclaration = VarDeclaration Type Identifier deriving (Show, Eq, Ord)

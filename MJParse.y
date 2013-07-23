@@ -164,5 +164,4 @@ happyError tks = error ("Parse error at " ++ lcn ++ "\n")
 		  [] -> "end of file"
 		  (tk:_) -> "line " ++ show l ++ ", column " ++ show c ++ " (token " ++ filterPn (show tk) ++ ")"
 			where AlexPn _ l c = token_pos tk
-
 }

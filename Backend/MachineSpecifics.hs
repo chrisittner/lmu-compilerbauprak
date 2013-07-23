@@ -68,3 +68,4 @@ instance (Error e, MachineSpecifics m a f) => MachineSpecifics (ErrorT e m) a f 
   generalPurposeRegisters = lift generalPurposeRegisters
   spill frame instrs temps = lift $ spill frame instrs temps
   printAssembly frag = lift $ printAssembly frag
+

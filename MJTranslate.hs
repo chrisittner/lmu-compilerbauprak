@@ -208,4 +208,3 @@ translateExp s addrlist (F.NegExp exp) = do
 	return $ BINOP MINUS (CONST 1) exp
 
 translateExp s addrlist (F.BracedExp exp) = translateExp s addrlist exp
-

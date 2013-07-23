@@ -150,3 +150,4 @@ cmmDoc frags =
      return $ text "#include <stdint.h>"
               $$ text "#define MEM(x) *((int32_t*)(x))"
               $$ vcat fs
+

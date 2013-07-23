@@ -99,5 +99,3 @@ renameTempInOper (Mem (Just t) scale (Just t') offset) f = Mem (Just $ f t) scal
 renameTempInOper (Mem (Just t) scale index offset) f = Mem (Just $ f t) scale index offset
 renameTempInOper (Mem base scale (Just t) offset) f = Mem base scale (Just $ f t) offset
 renameTempInOper o _ = o
-
-

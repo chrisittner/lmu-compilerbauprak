@@ -24,7 +24,6 @@ instance Frame X86Frame where
 	makeProc f body returnExp = return $ SEQ body $ MOVE (TEMP eax) returnExp
 
 
-
 newtype X86MachineT m a = X86MachineT { runX86MachineT :: NameGenT m a } deriving (Monad, MonadNameGen, MonadTrans)
 
 withX86Machine :: Monad m => X86MachineT m a -> m a

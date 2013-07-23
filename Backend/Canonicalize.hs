@@ -1,5 +1,4 @@
 module Backend.Canonicalize where
-
 import Prelude hiding (EQ,GT,LT)
 import Backend.Tree
 import Backend.Names
@@ -154,6 +153,7 @@ trace' tracedstms@((CJUMP cmp e1 e2 trueLabel falseLabel):_) blocks = do
 						let dummyBlock = [jump falseLabel, LABEL dummyLabel] -- Dummy Block (in reverse)
 						trace' ((reverse (head blocks)) ++ dummyBlock ++ ((CJUMP cmp e1 e2 trueLabel dummyLabel):(tail tracedstms))) (tail blocks)
 
+
+-- helpers
 hasLabel :: Label -> [[Stm]] -> [Stm] -> [[Stm]]
 hasLabel lab results block = if LABEL lab == head block then block:results else results
-

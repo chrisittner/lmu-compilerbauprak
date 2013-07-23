@@ -74,4 +74,3 @@ deg' node edges currentNodes = length $ neighbors -- `intersect` map fst current
 uncolored :: (Temp, Maybe Temp) -> Bool
 uncolored (t, Nothing) = True
 uncolored _ = False
-
