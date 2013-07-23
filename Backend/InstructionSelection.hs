@@ -21,8 +21,8 @@ munchExp (B.BINOP op a b) = do
 	let instr = case op of
 		B.PLUS -> [OPER2 MOV (Reg t)  a, OPER2 ADD (Reg t)  b]
 		B.MINUS -> [OPER2 MOV (Reg t) a, OPER2 SUB (Reg t) b]
-		B.MUL -> [OPER2 MOV (Reg eax) a, OPER2 MOV (Reg t) b, OPER1 IMUL (Reg t), OPER2 MOV (Reg t) (Reg eax)]
-		B.DIV -> [OPER2 MOV (Reg eax) a, OPER2 MOV (Reg t) b, OPER1 IDIV (Reg t), OPER2 MOV (Reg t) (Reg eax)]
+		B.MUL -> [OPER2 MOV (Reg eax) a, OPER2 MOV (Reg t) b, OPER2 SAR (Reg edx) (Imm 31), OPER1 IMUL (Reg t), OPER2 MOV (Reg t) (Reg eax)]
+		B.DIV -> [OPER2 MOV (Reg eax) a, OPER2 MOV (Reg t) b, OPER2 MOV (Reg edx) (Reg eax), OPER1 IDIV (Reg t), OPER2 MOV (Reg t) (Reg eax)]
 		B.AND -> [OPER2 MOV (Reg t) a, OPER2 AND (Reg t) b]
 		B.OR -> [OPER2 MOV (Reg t) a, OPER2 OR (Reg t) b]
 		B.LSHIFT -> [OPER2 MOV (Reg t) a, OPER2 SAL (Reg t) b]
